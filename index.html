@@ -271,7 +271,11 @@ THEM: Ohhh Lucky 😄
                   <path d="M8.6 14.1c.9 1.1 2.05 1.6 3.4 1.6s2.5-.5 3.4-1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
                 </svg>
               </span>
-              <div class="input-box" id="inputBox">Message</div>
+              <div class="input-box" id="inputBox">
+                <span class="input-placeholder" id="inputPlaceholder">Message</span>
+                <span class="input-text" id="inputText"></span>
+                <span class="input-caret" id="inputCaret" aria-hidden="true"></span>
+              </div>
             </div>
             <div class="input-right">
               <span class="icon-btn attach-btn" aria-hidden="true">
@@ -293,6 +297,31 @@ THEM: Ohhh Lucky 😄
                   <path d="M9.8 19.8h4.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
                 </svg>
               </button>
+            </div>
+          </div>
+
+          <!-- Keyboard Overlay (for typing animation) -->
+          <div class="keyboard-overlay" id="keyboardOverlay" aria-hidden="true">
+            <div class="keyboard-top" id="keyboardTop">
+              <div class="compose-preview" id="composePreview"></div>
+            </div>
+            <div class="keyboard" id="keyboard">
+              <div class="kb-row">
+                <span class="kb-key" data-key="q">q</span><span class="kb-key" data-key="w">w</span><span class="kb-key" data-key="e">e</span><span class="kb-key" data-key="r">r</span><span class="kb-key" data-key="t">t</span><span class="kb-key" data-key="y">y</span><span class="kb-key" data-key="u">u</span><span class="kb-key" data-key="i">i</span><span class="kb-key" data-key="o">o</span><span class="kb-key" data-key="p">p</span>
+              </div>
+              <div class="kb-row">
+                <span class="kb-key" data-key="a">a</span><span class="kb-key" data-key="s">s</span><span class="kb-key" data-key="d">d</span><span class="kb-key" data-key="f">f</span><span class="kb-key" data-key="g">g</span><span class="kb-key" data-key="h">h</span><span class="kb-key" data-key="j">j</span><span class="kb-key" data-key="k">k</span><span class="kb-key" data-key="l">l</span>
+              </div>
+              <div class="kb-row">
+                <span class="kb-key wide" data-key="shift">shift</span>
+                <span class="kb-key" data-key="z">z</span><span class="kb-key" data-key="x">x</span><span class="kb-key" data-key="c">c</span><span class="kb-key" data-key="v">v</span><span class="kb-key" data-key="b">b</span><span class="kb-key" data-key="n">n</span><span class="kb-key" data-key="m">m</span>
+                <span class="kb-key wide" data-key="backspace">⌫</span>
+              </div>
+              <div class="kb-row">
+                <span class="kb-key wide" data-key="emoji">😊</span>
+                <span class="kb-key wide" data-key="space">space</span>
+                <span class="kb-key wide" data-key="enter">↵</span>
+              </div>
             </div>
           </div>
         </div>

@@ -764,13 +764,113 @@ textarea {
 .input-box {
   flex: 1;
   font-size: 15px;
-  color: #999;
+  color: #111b21;
   border: none;
   outline: none;
   background: transparent;
   padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 20px;
 }
 
+.input-placeholder {
+  color: #8696a0;
+}
+
+.input-text {
+  white-space: pre-wrap;
+}
+
+.input-caret {
+  width: 1.5px;
+  height: 16px;
+  background: #1f2c34;
+  opacity: 0;
+  animation: caretBlink 1s infinite;
+}
+
+.input-box.typing .input-placeholder {
+  display: none;
+}
+
+.input-box.typing .input-caret {
+  opacity: 1;
+}
+
+@keyframes caretBlink {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0; }
+}
+
+.keyboard-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform: translateY(105%);
+  transition: transform 220ms ease;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.keyboard-overlay.show {
+  transform: translateY(0);
+}
+
+.keyboard-top {
+  background: rgba(240, 242, 245, 0.98);
+  padding: 6px 10px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.compose-preview {
+  font-size: 12px;
+  color: #1f2c34;
+  min-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.keyboard {
+  background: #d9dde3;
+  padding: 10px 10px 12px;
+}
+
+.kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.kb-key {
+  background: #ffffff;
+  color: #111b21;
+  font-size: 12px;
+  padding: 10px 0;
+  width: 28px;
+  text-align: center;
+  border-radius: 6px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+  user-select: none;
+}
+
+.kb-key.wide {
+  width: 64px;
+}
+
+.kb-key[data-key="space"] {
+  width: 160px;
+}
+
+.kb-key.active {
+  transform: translateY(1px);
+  box-shadow: 0 0 0 rgba(0,0,0,0.0);
+  background: #e6f3ff;
+}
 .input-right {
   display: flex;
   align-items: center;

@@ -25,6 +25,10 @@ class WhatsAppRenderer {
     this.onlineDot = document.querySelector(this.options.onlineDotSelector);
     this.chatWallpaper = this.chatArea?.querySelector('#chatWallpaper') || null;
     this.avatarImage = this.headerAvatar?.querySelector('#avatarImage') || null;
+    this.inputBox = document.querySelector('#inputBox');
+    this.inputText = document.querySelector('#inputText');
+    this.keyboardOverlay = document.querySelector('#keyboardOverlay');
+    this.composePreview = document.querySelector('#composePreview');
     
     this.isPlaying = false;
     this.timeouts = [];
@@ -116,6 +120,9 @@ class WhatsAppRenderer {
     this.clearTimeouts();
     this.messageIndex = 0;
     this.isPlaying = false;
+    this.setKeyboardVisible(false);
+    this.setComposePreview('');
+    this.setInputText('');
   }
 
   /**
@@ -124,6 +131,63 @@ class WhatsAppRenderer {
   clearTimeouts() {
     this.timeouts.forEach(t => clearTimeout(t));
     this.timeouts = [];
+  }
+
+  setKeyboardVisible(visible) {
+    if (!this.keyboardOverlay) return;
+    this.keyboardOverlay.classList.toggle('show', !!visible);
+  }
+
+  setComposePreview(text) {
+    if (!this.composePreview) return;
+    this.composePreview.textContent = text || '';
+  }
+
+  setInputText(text) {
+    if (!this.inputText || !this.inputBox) return;
+    this.inputText.textContent = text || '';
+    this.inputBox.classList.toggle('typing', !!text);
+  }
+
+  flashKey(key) {
+    const el = document.querySelector(`.kb-key[data-key="${key}"]`);
+    if (!el) return;
+    el.classList.add('active');
+    setTimeout(() => el.classList.remove('active'), 80);
+  }
+
+  normalizeKey(char) {
+    const c = (char || '').toLowerCase();
+    if (c >= 'a' && c <= 'z') return c;
+    if (c === ' ') return 'space';
+    if (c === '\n') return 'enter';
+    return 'emoji';
+  }
+
+  simulateTypingIntoInput(text, totalMs) {
+    return new Promise((resolve) => {
+      const raw = String(text || '');
+      const chars = Array.from(raw);
+      const steps = Math.max(1, chars.length);
+      const stepMs = Math.max(18, Math.floor(totalMs / steps));
+      let i = 0;
+      this.setInputText('');
+      
+      const interval = setInterval(() => {
+        if (i >= chars.length) {
+          clearInterval(interval);
+          resolve();
+          return;
+        }
+        const next = chars[i++];
+        const current = (this.inputText?.textContent || '') + next;
+        this.setInputText(current);
+        this.flashKey(this.normalizeKey(next));
+      }, stepMs);
+      
+      // ensure cleared when paused/stopped
+      this.timeouts.push(interval);
+    });
   }
 
   /**
@@ -206,6 +270,8 @@ class WhatsAppRenderer {
     // Show typing indicator for received messages
     if (msg.s === 'received') {
       this.headerStatus.textContent = 'typing...';
+      this.setKeyboardVisible(true);
+      this.setComposePreview(msg.t);
       
       const typingWrapper = document.createElement('div');
       typingWrapper.className = 'typing-wrap';
@@ -228,6 +294,8 @@ class WhatsAppRenderer {
       const timeout1 = setTimeout(() => {
         typingWrapper.remove();
         this.headerStatus.textContent = 'online';
+        this.setKeyboardVisible(false);
+        this.setComposePreview('');
         this.showMessage(msg);
         
         // Notify callback
@@ -246,18 +314,25 @@ class WhatsAppRenderer {
       this.timeouts.push(timeout1);
       
     } else {
-      // Sent message - no typing indicator
-      this.showMessage(msg);
-      
-      if (this.onMessageCallback) {
-        this.onMessageCallback(msg, this.messageIndex);
-      }
-      
-      const timeout = setTimeout(() => {
-        this.messageIndex++;
-        this.processNextMessage();
-      }, messageDelay);
-      this.timeouts.push(timeout);
+      // Sent message - animate keyboard + input typing before sending
+      this.setKeyboardVisible(true);
+      this.setComposePreview('');
+
+      this.simulateTypingIntoInput(msg.t, messageDelay).then(() => {
+        this.setKeyboardVisible(false);
+        this.setInputText('');
+        this.showMessage(msg);
+
+        if (this.onMessageCallback) {
+          this.onMessageCallback(msg, this.messageIndex);
+        }
+
+        const timeout = setTimeout(() => {
+          this.messageIndex++;
+          this.processNextMessage();
+        }, 300);
+        this.timeouts.push(timeout);
+      });
     }
   }
 
