@@ -379,8 +379,9 @@ class VideoExporter {
       const conversionProfiles = [
         [
           '-i', inputName,
+          '-vf', 'scale=720:-2',
+          '-r', '30',
           '-c:v', 'h264',
-          '-preset', 'veryfast',
           '-pix_fmt', 'yuv420p',
           '-movflags', '+faststart',
           '-an',
@@ -388,8 +389,9 @@ class VideoExporter {
         ],
         [
           '-i', inputName,
+          '-vf', 'scale=720:-2',
+          '-r', '30',
           '-c:v', 'libopenh264',
-          '-preset', 'veryfast',
           '-pix_fmt', 'yuv420p',
           '-movflags', '+faststart',
           '-an',
@@ -397,8 +399,11 @@ class VideoExporter {
         ],
         [
           '-i', inputName,
+          '-vf', 'scale=720:-2',
+          '-r', '30',
           '-c:v', 'libx264',
-          '-preset', 'veryfast',
+          '-preset', 'ultrafast',
+          '-crf', '28',
           '-pix_fmt', 'yuv420p',
           '-movflags', '+faststart',
           '-an',
@@ -406,8 +411,10 @@ class VideoExporter {
         ],
         [
           '-i', inputName,
+          '-vf', 'scale=720:-2',
+          '-r', '30',
           '-c:v', 'mpeg4',
-          '-q:v', '2',
+          '-q:v', '5',
           '-pix_fmt', 'yuv420p',
           '-movflags', '+faststart',
           '-an',

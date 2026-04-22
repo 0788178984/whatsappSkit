@@ -629,12 +629,21 @@ async function stopRecording() {
         exportBtn.textContent = '⏳ Converting to TikTok MP4... 0%';
       }
 
+      const startedAt = Date.now();
+      let lastPct = 0;
+      const tick = setInterval(() => {
+        if (!exportBtn) return;
+        const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+        exportBtn.textContent = `⏳ Converting to TikTok MP4... ${lastPct}% (${elapsed}s)`;
+      }, 1000);
+
       try {
         blob = await AppState.exporter.convertToMp4(blob, {
           timeoutMs: 180000,
           onProgress: (p) => {
             if (!exportBtn) return;
             const pct = Math.max(0, Math.min(100, Math.round(p * 100)));
+            lastPct = pct;
             exportBtn.textContent = `⏳ Converting to TikTok MP4... ${pct}%`;
           }
         });
@@ -643,6 +652,7 @@ async function stopRecording() {
         const reason = convertErr?.message ? `\nReason: ${convertErr.message}` : '';
         alert(`TikTok MP4 conversion failed on this browser. Downloading WebM instead.${reason}`);
       } finally {
+        clearInterval(tick);
         if (exportBtn) {
           exportBtn.disabled = false;
           exportBtn.textContent = originalText || '🎬 Preview & Export Video';
@@ -732,6 +742,22 @@ async function startExport() {
 
   // Speed up skit if it exceeds max duration
   applySpeedToFitDuration();
+
+  // TikTok MP4 conversion is heavy in-browser. Enforce safe capture settings
+  // so conversion finishes on most devices (720p @ 30fps).
+  const preferMp4 = document.getElementById('tiktokMp4')?.checked;
+  if (preferMp4) {
+    const resEl = document.getElementById('videoResolution');
+    const fpsEl = document.getElementById('videoFps');
+    if (resEl && resEl.value === '1080') resEl.value = '720';
+    if (fpsEl && fpsEl.value === '60') fpsEl.value = '30';
+
+    // Ensure exporter uses updated settings.
+    if (AppState.exporter) {
+      AppState.exporter.options.resolution = resEl?.value || AppState.exporter.options.resolution;
+      AppState.exporter.options.fps = parseInt(fpsEl?.value || AppState.exporter.options.fps, 10) || AppState.exporter.options.fps;
+    }
+  }
   
   // Small delay to let reset complete
   await new Promise(resolve => setTimeout(resolve, 300));
