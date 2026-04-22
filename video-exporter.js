@@ -306,10 +306,22 @@ class VideoExporter {
 
     if (!this.ffmpegLoaded) {
       const base = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-      await this.ffmpeg.load({
-        coreURL: `${base}/ffmpeg-core.js`,
-        wasmURL: `${base}/ffmpeg-core.wasm`
-      });
+      const canBlobify = typeof utilGlobal.toBlobURL === 'function';
+      const usingFileProtocol = window.location.protocol === 'file:';
+
+      let coreURL = `${base}/ffmpeg-core.js`;
+      let wasmURL = `${base}/ffmpeg-core.wasm`;
+      let workerURL = `${base}/ffmpeg-core.worker.js`;
+
+      // Under file://, browser blocks cross-origin worker scripts.
+      // Convert remote core/wasm/worker URLs into same-origin blob URLs.
+      if (canBlobify && usingFileProtocol) {
+        coreURL = await utilGlobal.toBlobURL(coreURL, 'text/javascript');
+        wasmURL = await utilGlobal.toBlobURL(wasmURL, 'application/wasm');
+        workerURL = await utilGlobal.toBlobURL(workerURL, 'text/javascript');
+      }
+
+      await this.ffmpeg.load({ coreURL, wasmURL, workerURL });
       this.ffmpegLoaded = true;
     }
 
@@ -318,15 +330,43 @@ class VideoExporter {
     await this.ffmpeg.writeFile(inputName, await utilGlobal.fetchFile(webmBlob));
 
     try {
-      await this.ffmpeg.exec([
-        '-i', inputName,
-        '-c:v', 'libx264',
-        '-preset', 'veryfast',
-        '-pix_fmt', 'yuv420p',
-        '-movflags', '+faststart',
-        '-an',
-        outputName
-      ]);
+      // Prefer H.264 for TikTok compatibility.
+      // Some ffmpeg.wasm builds may not include libx264, so fallback to mpeg4.
+      let converted = false;
+      const conversionProfiles = [
+        [
+          '-i', inputName,
+          '-c:v', 'libx264',
+          '-preset', 'veryfast',
+          '-pix_fmt', 'yuv420p',
+          '-movflags', '+faststart',
+          '-an',
+          outputName
+        ],
+        [
+          '-i', inputName,
+          '-c:v', 'mpeg4',
+          '-q:v', '2',
+          '-pix_fmt', 'yuv420p',
+          '-movflags', '+faststart',
+          '-an',
+          outputName
+        ]
+      ];
+
+      for (const profile of conversionProfiles) {
+        try {
+          await this.ffmpeg.exec(profile);
+          converted = true;
+          break;
+        } catch (err) {
+          console.warn('MP4 conversion profile failed, trying fallback:', err);
+        }
+      }
+
+      if (!converted) {
+        throw new Error('All MP4 conversion profiles failed in this browser.');
+      }
 
       const data = await this.ffmpeg.readFile(outputName);
       return new Blob([data.buffer], { type: 'video/mp4' });

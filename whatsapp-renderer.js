@@ -81,19 +81,36 @@ class WhatsAppRenderer {
     if (this.dateChip) {
       this.dateChip.textContent = dateText;
     }
+    // Hide e2e notice when custom date is set (user overrode default)
+    const e2e = this.chatArea?.querySelector('.e2e-notice');
+    if (e2e) {
+      const isDefault = !dateText || dateText === this.formatCurrentDate();
+      e2e.style.display = isDefault ? '' : 'none';
+    }
+  }
+
+  /**
+   * Format current date as WhatsApp-style (e.g. April 22, 2026)
+   */
+  formatCurrentDate() {
+    const now = new Date();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
   }
 
   /**
    * Clear all messages
    */
   clearChat() {
-    // Keep only the date chip
+    // Keep only the date chip and e2e notice
     if (this.chatArea) {
       const dateChip = this.chatArea.querySelector('.date-chip');
+      const e2eNotice = this.chatArea.querySelector('.e2e-notice');
       const wallpaper = this.chatArea.querySelector('.chat-wallpaper');
       this.chatArea.innerHTML = '';
       if (wallpaper) this.chatArea.appendChild(wallpaper);
       if (dateChip) this.chatArea.appendChild(dateChip);
+      if (e2eNotice) this.chatArea.appendChild(e2eNotice);
     }
     
     this.clearTimeouts();
@@ -347,9 +364,16 @@ class WhatsAppRenderer {
     const dateChip = document.createElement('div');
     dateChip.className = 'date-chip';
     dateChip.id = 'dateChip';
-    dateChip.textContent = this.dateChip?.textContent || 'Today';
+    dateChip.textContent = this.dateChip?.textContent || this.formatCurrentDate();
     this.chatArea.appendChild(dateChip);
     this.dateChip = dateChip;
+
+    // Re-add e2e notice
+    const e2eNotice = document.createElement('div');
+    e2eNotice.className = 'e2e-notice';
+    e2eNotice.id = 'e2eNotice';
+    e2eNotice.innerHTML = '<svg class="e2e-lock" viewBox="0 0 10 12" width="10" height="12"><path d="M5 0C3.07 0 1.5 1.57 1.5 3.5V5H1a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-.5V3.5C8.5 1.57 6.93 0 5 0zm0 1.5c1.1 0 2 .9 2 2V5H3V3.5c0-1.1.9-2 2-2z" fill="#6B7C85"/></svg> Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.';
+    this.chatArea.appendChild(e2eNotice);
     
     for (let i = 0; i <= index && i < this.currentMessages.length; i++) {
       const msg = this.currentMessages[i];

@@ -529,7 +529,7 @@ textarea {
 
 .date-chip {
   text-align: center;
-  margin: 6px auto 10px;
+  margin: 6px auto 4px;
   background: rgba(255,255,255,0.92);
   color: #6B7C85;
   font-size: 12px;
@@ -539,6 +539,24 @@ textarea {
   font-weight: 500;
   position: relative;
   z-index: 1;
+}
+
+.e2e-notice {
+  text-align: center;
+  margin: 0 auto 10px;
+  color: #6B7C85;
+  font-size: 11px;
+  padding: 4px 20px 6px;
+  line-height: 1.35;
+  position: relative;
+  z-index: 1;
+  max-width: 260px;
+}
+
+.e2e-notice .e2e-lock {
+  display: inline-block;
+  vertical-align: -1px;
+  margin-right: 2px;
 }
 
 /* Messages */
