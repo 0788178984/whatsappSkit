@@ -305,7 +305,8 @@ class VideoExporter {
     }
 
     if (!this.ffmpegLoaded) {
-      const base = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      // Keep core version aligned with @ffmpeg/ffmpeg version in index.html
+      const base = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
       const canBlobify = typeof utilGlobal.toBlobURL === 'function';
       const usingFileProtocol = window.location.protocol === 'file:';
 
@@ -331,9 +332,28 @@ class VideoExporter {
 
     try {
       // Prefer H.264 for TikTok compatibility.
-      // Some ffmpeg.wasm builds may not include libx264, so fallback to mpeg4.
+      // Different ffmpeg wasm builds expose different encoder names, so try multiple.
       let converted = false;
+      let lastError = null;
       const conversionProfiles = [
+        [
+          '-i', inputName,
+          '-c:v', 'h264',
+          '-preset', 'veryfast',
+          '-pix_fmt', 'yuv420p',
+          '-movflags', '+faststart',
+          '-an',
+          outputName
+        ],
+        [
+          '-i', inputName,
+          '-c:v', 'libopenh264',
+          '-preset', 'veryfast',
+          '-pix_fmt', 'yuv420p',
+          '-movflags', '+faststart',
+          '-an',
+          outputName
+        ],
         [
           '-i', inputName,
           '-c:v', 'libx264',
@@ -360,12 +380,14 @@ class VideoExporter {
           converted = true;
           break;
         } catch (err) {
+          lastError = err;
           console.warn('MP4 conversion profile failed, trying fallback:', err);
         }
       }
 
       if (!converted) {
-        throw new Error('All MP4 conversion profiles failed in this browser.');
+        const reason = lastError?.message || String(lastError || 'unknown error');
+        throw new Error(`All MP4 conversion profiles failed in this browser: ${reason}`);
       }
 
       const data = await this.ffmpeg.readFile(outputName);

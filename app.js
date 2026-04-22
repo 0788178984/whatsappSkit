@@ -633,7 +633,8 @@ async function stopRecording() {
         blob = await AppState.exporter.convertToMp4(blob);
       } catch (convertErr) {
         console.warn('TikTok MP4 conversion failed, keeping WebM:', convertErr);
-        alert('TikTok MP4 conversion failed on this browser. Downloading WebM instead.');
+        const reason = convertErr?.message ? `\nReason: ${convertErr.message}` : '';
+        alert(`TikTok MP4 conversion failed on this browser. Downloading WebM instead.${reason}`);
       } finally {
         if (exportBtn) {
           exportBtn.disabled = false;
