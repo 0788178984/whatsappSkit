@@ -323,7 +323,7 @@ class VideoExporter {
   /**
    * Convert webm blob to mp4 using FFmpeg.js
    */
-  async convertToMp4(webmBlob) {
+  async convertToMp4(webmBlob, options = {}) {
     await this.ensureLocalFfmpegRuntime();
 
     const ffmpegGlobal = window.FFmpegWASM;
@@ -335,6 +335,9 @@ class VideoExporter {
     if (!this.ffmpeg) {
       this.ffmpeg = new ffmpegGlobal.FFmpeg();
     }
+
+    const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 180000; // 3 minutes
 
     if (!this.ffmpegLoaded) {
       // Serve ffmpeg core assets locally to avoid cross-origin worker restrictions.
@@ -353,6 +356,15 @@ class VideoExporter {
 
       await this.ffmpeg.load({ coreURL, wasmURL });
       this.ffmpegLoaded = true;
+    }
+
+    // Attach progress callback if supported by this ffmpeg build.
+    if (onProgress && typeof this.ffmpeg.on === 'function') {
+      try {
+        this.ffmpeg.on('progress', ({ progress }) => {
+          if (typeof progress === 'number') onProgress(progress);
+        });
+      } catch (e) {}
     }
 
     const inputName = `input-${Date.now()}.webm`;
@@ -403,9 +415,18 @@ class VideoExporter {
         ]
       ];
 
+      const runWithTimeout = async (args) => {
+        const work = this.ffmpeg.exec(args);
+        if (!timeoutMs || timeoutMs <= 0) return await work;
+        await Promise.race([
+          work,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('MP4 conversion timed out.')), timeoutMs))
+        ]);
+      };
+
       for (const profile of conversionProfiles) {
         try {
-          await this.ffmpeg.exec(profile);
+          await runWithTimeout(profile);
           converted = true;
           break;
         } catch (err) {

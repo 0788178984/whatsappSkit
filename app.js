@@ -626,11 +626,18 @@ async function stopRecording() {
       const originalText = exportBtn?.textContent;
       if (exportBtn) {
         exportBtn.disabled = true;
-        exportBtn.textContent = '⏳ Converting to TikTok MP4...';
+        exportBtn.textContent = '⏳ Converting to TikTok MP4... 0%';
       }
 
       try {
-        blob = await AppState.exporter.convertToMp4(blob);
+        blob = await AppState.exporter.convertToMp4(blob, {
+          timeoutMs: 180000,
+          onProgress: (p) => {
+            if (!exportBtn) return;
+            const pct = Math.max(0, Math.min(100, Math.round(p * 100)));
+            exportBtn.textContent = `⏳ Converting to TikTok MP4... ${pct}%`;
+          }
+        });
       } catch (convertErr) {
         console.warn('TikTok MP4 conversion failed, keeping WebM:', convertErr);
         const reason = convertErr?.message ? `\nReason: ${convertErr.message}` : '';
