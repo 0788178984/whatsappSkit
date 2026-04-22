@@ -17,6 +17,7 @@ const AppState = {
   recordedChunks: [],
   wallpaperUrl: null,
   isStartingRecording: false,
+  maxDurationTimer: null,
   customSentSoundUrl: null,
   customReceivedSoundUrl: null,
   customSentAudio: null,
@@ -82,11 +83,22 @@ function initApp() {
 
   AppState.renderer.onMessageCallback = (msg) => {
     playMessageSound(msg);
+    // Update status bar time to match the message time
+    if (msg && msg.time) {
+      const statusTime = document.getElementById('statusTime');
+      if (statusTime) statusTime.textContent = msg.time;
+    }
   };
   
-  // Update clock
+  // Set date chip to current formatted date
+  AppState.renderer.setDate(AppState.renderer.formatCurrentDate());
+
+  // Update clock (correlates with chat times)
   updateClock();
   setInterval(updateClock, 1000);
+
+  // Update date chip daily at midnight
+  scheduleDateUpdate();
 }
 
 function setupEventListeners() {
@@ -380,13 +392,14 @@ function parseAndPreview() {
     AppState.currentSkit = AppState.parser.parse(script);
     
     // Update date display
-    if (AppState.currentSkit.date) {
-      const dateText = AppState.currentSkit.title 
+    const currentDate = AppState.renderer.formatCurrentDate();
+    const dateText = AppState.currentSkit.date && AppState.currentSkit.date !== 'Today'
+      ? (AppState.currentSkit.title 
         ? `${AppState.currentSkit.date} · ${AppState.currentSkit.title}`
-        : AppState.currentSkit.date;
-      AppState.renderer.setDate(dateText);
-      document.getElementById('chatDate').value = dateText;
-    }
+        : AppState.currentSkit.date)
+      : currentDate;
+    AppState.renderer.setDate(dateText);
+    document.getElementById('chatDate').value = dateText;
     
     // Load messages (but don't play yet)
     AppState.renderer.loadMessages(AppState.currentSkit.messages);
@@ -564,6 +577,17 @@ async function startCanvasRecording() {
   
   AppState.recordStartTime = Date.now();
   startRecordTimer();
+
+  // Enforce max duration
+  const maxSeconds = getMaxDurationSeconds();
+  if (maxSeconds > 0) {
+    AppState.maxDurationTimer = setTimeout(() => {
+      if (AppState.isRecording) {
+        console.log('Max duration reached, stopping recording.');
+        stopRecording();
+      }
+    }, maxSeconds * 1000);
+  }
 }
 
 function startRecordTimer() {
@@ -582,6 +606,10 @@ async function stopRecording() {
   
   AppState.isRecording = false;
   clearInterval(AppState.recordTimer);
+  if (AppState.maxDurationTimer) {
+    clearTimeout(AppState.maxDurationTimer);
+    AppState.maxDurationTimer = null;
+  }
   
   // Update UI
   document.getElementById('phone').classList.remove('recording');
@@ -590,7 +618,30 @@ async function stopRecording() {
   
   // Stop canvas-based recording and get the blob
   try {
-    const blob = await AppState.exporter.stopRecording();
+    let blob = await AppState.exporter.stopRecording();
+    const preferMp4 = document.getElementById('tiktokMp4')?.checked;
+
+    if (blob && preferMp4 && !blob.type.includes('mp4')) {
+      const exportBtn = document.getElementById('exportBtn');
+      const originalText = exportBtn?.textContent;
+      if (exportBtn) {
+        exportBtn.disabled = true;
+        exportBtn.textContent = '⏳ Converting to TikTok MP4...';
+      }
+
+      try {
+        blob = await AppState.exporter.convertToMp4(blob);
+      } catch (convertErr) {
+        console.warn('TikTok MP4 conversion failed, keeping WebM:', convertErr);
+        alert('TikTok MP4 conversion failed on this browser. Downloading WebM instead.');
+      } finally {
+        if (exportBtn) {
+          exportBtn.disabled = false;
+          exportBtn.textContent = originalText || '🎬 Preview & Export Video';
+        }
+      }
+    }
+
     if (blob) {
       showVideoOutput(blob);
     }
@@ -626,9 +677,53 @@ function showVideoOutput(blob) {
   AppState.isPlaying = false;
 }
 
+function getMaxDurationSeconds() {
+  const el = document.getElementById('maxDuration');
+  if (!el) return 0;
+  return parseInt(el.value, 10) || 0;
+}
+
+function applySpeedToFitDuration() {
+  const maxSeconds = getMaxDurationSeconds();
+  if (maxSeconds <= 0 || !AppState.currentSkit) return;
+
+  const estimatedMs = AppState.renderer.getEstimatedDuration();
+  const estimatedSec = estimatedMs / 1000;
+
+  if (estimatedSec <= maxSeconds) return; // fits already
+
+  // Need to speed up. Pick the fastest typing speed.
+  const speedEl = document.getElementById('typingSpeed');
+  if (speedEl) speedEl.value = 'fast';
+  AppState.renderer.options.typingSpeed = 'fast';
+
+  // Re-check with fast speed
+  const fastMs = AppState.renderer.getEstimatedDuration();
+  const fastSec = fastMs / 1000;
+
+  if (fastSec <= maxSeconds) return; // fast speed fits
+
+  // Still too long even at fast speed. Apply a custom speed multiplier.
+  // Reduce base delay proportionally.
+  const ratio = maxSeconds / fastSec;
+  const normalSpeeds = AppState.renderer.typingSpeeds;
+  AppState.renderer.typingSpeeds = {
+    ...normalSpeeds,
+    custom: {
+      base: Math.max(300, Math.round(normalSpeeds.fast.base * ratio)),
+      perChar: Math.max(5, Math.round(normalSpeeds.fast.perChar * ratio)),
+      typing: Math.max(200, Math.round(normalSpeeds.fast.typing * ratio))
+    }
+  };
+  AppState.renderer.options.typingSpeed = 'custom';
+}
+
 async function startExport() {
   // Reset and start playback with recording
   resetChat();
+
+  // Speed up skit if it exceeds max duration
+  applySpeedToFitDuration();
   
   // Small delay to let reset complete
   await new Promise(resolve => setTimeout(resolve, 300));
@@ -656,17 +751,47 @@ function clearScript() {
 }
 
 function updateClock() {
+  // If a skit is loaded and has messages with times, use the last message time
+  // Otherwise use real clock time
+  const statusTime = document.getElementById('statusTime');
+  if (!statusTime) return;
+
+  // Try to get time from the most recent visible message
+  const chatArea = document.getElementById('chatArea');
+  const metaEls = chatArea?.querySelectorAll('.msg-meta');
+  if (metaEls && metaEls.length > 0) {
+    const lastMeta = metaEls[metaEls.length - 1];
+    const metaText = lastMeta.textContent.trim();
+    // Extract time like "7:03 PM" from meta text (time is before ticks)
+    const timeMatch = metaText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+    if (timeMatch) {
+      statusTime.textContent = timeMatch[1].toUpperCase();
+      return;
+    }
+  }
+
+  // Fallback to real clock
   const now = new Date();
   let hours = now.getHours();
   const minutes = now.getMinutes().toString().padStart(2, '0');
   const ampm = hours >= 12 ? 'PM' : 'AM';
   hours = hours % 12 || 12;
-  
-  const timeStr = `${hours}:${minutes} ${ampm}`;
-  const statusTime = document.getElementById('statusTime');
-  if (statusTime) {
-    statusTime.textContent = timeStr;
-  }
+  statusTime.textContent = `${hours}:${minutes} ${ampm}`;
+}
+
+function scheduleDateUpdate() {
+  // Update date chip at midnight
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const msUntilMidnight = tomorrow - now;
+
+  setTimeout(() => {
+    if (AppState.renderer) {
+      AppState.renderer.setDate(AppState.renderer.formatCurrentDate());
+    }
+    // Reschedule for next midnight
+    scheduleDateUpdate();
+  }, msUntilMidnight + 1000);
 }
 
 window.addEventListener('beforeunload', () => {

@@ -26,6 +26,8 @@ class VideoExporter {
     this.captureInProgress = false;
     this.captureTimer = null;
     this.consecutiveFrameErrors = 0;
+    this.ffmpeg = null;
+    this.ffmpegLoaded = false;
     
     this.resolutions = {
       '1080': { width: 1080, height: 1920 },
@@ -292,44 +294,46 @@ class VideoExporter {
    * Convert webm blob to mp4 using FFmpeg.js
    */
   async convertToMp4(webmBlob) {
-    // If we can use ffmpeg.wasm for conversion
-    if (typeof FFmpeg !== 'undefined') {
-      const { FFmpeg } = FFmpegWASM;
-      const ffmpeg = new FFmpeg();
-      
-      await ffmpeg.load();
-      
-      const inputName = 'input.webm';
-      const outputName = 'output.mp4';
-      
-      // Write input file
-      await ffmpeg.writeFile(inputName, await fetchFile(webmBlob));
-      
-      // Convert
-      await ffmpeg.exec([
+    const ffmpegGlobal = window.FFmpegWASM;
+    const utilGlobal = window.FFmpegUtil;
+    if (!ffmpegGlobal?.FFmpeg || !utilGlobal?.fetchFile) {
+      throw new Error('FFmpeg wasm libraries are not available in this browser.');
+    }
+
+    if (!this.ffmpeg) {
+      this.ffmpeg = new ffmpegGlobal.FFmpeg();
+    }
+
+    if (!this.ffmpegLoaded) {
+      const base = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      await this.ffmpeg.load({
+        coreURL: `${base}/ffmpeg-core.js`,
+        wasmURL: `${base}/ffmpeg-core.wasm`
+      });
+      this.ffmpegLoaded = true;
+    }
+
+    const inputName = `input-${Date.now()}.webm`;
+    const outputName = `output-${Date.now()}.mp4`;
+    await this.ffmpeg.writeFile(inputName, await utilGlobal.fetchFile(webmBlob));
+
+    try {
+      await this.ffmpeg.exec([
         '-i', inputName,
         '-c:v', 'libx264',
-        '-preset', 'fast',
-        '-crf', '22',
-        '-c:a', 'aac',
-        '-b:a', '128k',
+        '-preset', 'veryfast',
+        '-pix_fmt', 'yuv420p',
         '-movflags', '+faststart',
+        '-an',
         outputName
       ]);
-      
-      // Read output
-      const data = await ffmpeg.readFile(outputName);
-      
-      // Cleanup
-      await ffmpeg.deleteFile(inputName);
-      await ffmpeg.deleteFile(outputName);
-      
+
+      const data = await this.ffmpeg.readFile(outputName);
       return new Blob([data.buffer], { type: 'video/mp4' });
+    } finally {
+      try { await this.ffmpeg.deleteFile(inputName); } catch (e) {}
+      try { await this.ffmpeg.deleteFile(outputName); } catch (e) {}
     }
-    
-    // If no FFmpeg, try to use native browser conversion or return webm
-    // Many modern players support webm, so this might be acceptable
-    return webmBlob;
   }
 
   /**

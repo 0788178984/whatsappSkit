@@ -183,12 +183,26 @@ THEM: Ohhh Lucky 😄
           </div>
         </div>
         <div class="form-group">
+          <label>Max Duration (TikTok limit)</label>
+          <select id="maxDuration">
+            <option value="60" selected>60 seconds</option>
+            <option value="180">3 minutes</option>
+            <option value="600">10 minutes</option>
+            <option value="0">No limit</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label>
             <input type="checkbox" id="autoPlayRecord" checked> Auto-start recording on play
           </label>
         </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="tiktokMp4" checked> TikTok MP4 Export (auto-convert)
+          </label>
+        </div>
         <div class="script-help" style="margin-bottom: 12px;">
-          Records only the WhatsApp chat (no screen permission needed)
+          Recording auto-stops at max duration. TikTok mode converts WebM to MP4.
         </div>
         <button class="btn btn-primary" id="exportBtn" onclick="startExport()">
           🎬 Preview & Export Video
@@ -239,7 +253,11 @@ THEM: Ohhh Lucky 😄
               <img class="wallpaper-image" id="wallpaperImage" alt="">
               <video class="wallpaper-video" id="wallpaperVideo" autoplay muted loop playsinline></video>
             </div>
-            <div class="date-chip" id="dateChip">Today</div>
+            <div class="date-chip" id="dateChip">Loading...</div>
+            <div class="e2e-notice" id="e2eNotice">
+              <svg class="e2e-lock" viewBox="0 0 10 12" width="10" height="12"><path d="M5 0C3.07 0 1.5 1.57 1.5 3.5V5H1a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-.5V3.5C8.5 1.57 6.93 0 5 0zm0 1.5c1.1 0 2 .9 2 2V5H3V3.5c0-1.1.9-2 2-2z" fill="#6B7C85"/></svg>
+              Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.
+            </div>
           </div>
 
           <!-- Input Area -->
@@ -308,6 +326,8 @@ THEM: Ohhh Lucky 😄
   <canvas id="captureCanvas" style="display: none;"></canvas>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
   <script src="skit-parser.js"></script>
   <script src="whatsapp-renderer.js"></script>
   <script src="video-exporter.js"></script>
