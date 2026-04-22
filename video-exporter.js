@@ -161,8 +161,8 @@ class VideoExporter {
     
     // Try different MIME types for compatibility
     const mimeTypes = [
-      'video/webm;codecs=vp8,opus',
-      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8',
+      'video/webm;codecs=vp9',
       'video/webm'
     ];
     
@@ -189,7 +189,7 @@ class VideoExporter {
       }
     };
     
-    this.mediaRecorder.start(1000); // Collect 1 second chunks
+    this.mediaRecorder.start(250); // Collect frequent chunks for safer finalization
     this.isRecording = true;
     
     // Start frame capture loop
@@ -258,6 +258,11 @@ class VideoExporter {
       };
 
       this.mediaRecorder.onstop = () => {
+        if (!this.recordedChunks.length) {
+          reject(new Error('No video chunks were captured. Recording output is empty.'));
+          return;
+        }
+
         const blob = new Blob(this.recordedChunks, { 
           type: this.mediaRecorder.mimeType 
         });
@@ -269,7 +274,16 @@ class VideoExporter {
 
         resolve(blob);
       };
-      
+
+      // Ask recorder to flush final pending chunk before stop.
+      if (this.mediaRecorder.state === 'recording') {
+        try {
+          this.mediaRecorder.requestData();
+        } catch (err) {
+          console.warn('requestData failed before stop:', err);
+        }
+      }
+
       this.mediaRecorder.stop();
     });
   }

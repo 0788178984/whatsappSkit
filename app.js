@@ -16,6 +16,7 @@ const AppState = {
   mediaRecorder: null,
   recordedChunks: [],
   wallpaperUrl: null,
+  isStartingRecording: false,
   customSentSoundUrl: null,
   customReceivedSoundUrl: null,
   customSentAudio: null,
@@ -419,7 +420,7 @@ function togglePlay() {
     
     // Check if we should auto-record
     const autoRecord = document.getElementById('autoPlayRecord')?.checked;
-    if (autoRecord && !AppState.isRecording) {
+    if (autoRecord && !AppState.isRecording && !AppState.isStartingRecording) {
       startRecording();
     }
     
@@ -456,7 +457,8 @@ function resetChat() {
 }
 
 async function startRecording() {
-  if (AppState.isRecording) return;
+  if (AppState.isRecording || AppState.isStartingRecording) return;
+  AppState.isStartingRecording = true;
   
   try {
     // Use canvas-based recording (records only the WhatsApp element, no permission dialog)
@@ -465,6 +467,8 @@ async function startRecording() {
   } catch (err) {
     console.error('Recording failed:', err);
     alert('Recording failed. Please try screen capture mode or use external recording software.');
+  } finally {
+    AppState.isStartingRecording = false;
   }
 }
 
@@ -597,11 +601,17 @@ async function stopRecording() {
 }
 
 function showVideoOutput(blob) {
+  if (!blob || blob.size === 0) {
+    alert('Export failed: generated video file is empty.');
+    return;
+  }
+
   const videoUrl = URL.createObjectURL(blob);
   const video = document.getElementById('exportedVideo');
   const downloadBtn = document.getElementById('downloadBtn');
   
   video.src = videoUrl;
+  video.load();
   downloadBtn.href = videoUrl;
   
   // Determine file extension from MIME type
@@ -616,15 +626,14 @@ function showVideoOutput(blob) {
   AppState.isPlaying = false;
 }
 
-function startExport() {
+async function startExport() {
   // Reset and start playback with recording
   resetChat();
   
   // Small delay to let reset complete
-  setTimeout(() => {
-    startRecording();
-    togglePlay();
-  }, 300);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await startRecording();
+  togglePlay();
 }
 
 function newExport() {
