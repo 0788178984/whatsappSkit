@@ -50,7 +50,8 @@ class VideoExporter {
       if (existing) existing.remove();
 
       const script = document.createElement('script');
-      script.src = `${src}?v=${Date.now()}`;
+      const abs = new URL(src, window.location.href).toString();
+      script.src = `${abs}${abs.includes('?') ? '&' : '?'}v=${Date.now()}`;
       if (marker) script.setAttribute('data-ffmpeg-local', marker);
       script.onload = () => resolve();
       script.onerror = () => reject(new Error(`Failed to load ${src}`));
@@ -341,8 +342,8 @@ class VideoExporter {
       const canBlobify = typeof utilGlobal.toBlobURL === 'function';
       const usingFileProtocol = window.location.protocol === 'file:';
 
-      let coreURL = `${base}/ffmpeg-core.js`;
-      let wasmURL = `${base}/ffmpeg-core.wasm`;
+      let coreURL = new URL(`${base}/ffmpeg-core.js`, window.location.href).toString();
+      let wasmURL = new URL(`${base}/ffmpeg-core.wasm`, window.location.href).toString();
 
       // Under file://, convert assets to blob URLs for same-origin loading.
       if (canBlobify && usingFileProtocol) {
