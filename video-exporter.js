@@ -37,6 +37,35 @@ class VideoExporter {
   }
 
   /**
+   * Force-load local ffmpeg runtime scripts from this site origin.
+   * This bypasses stale cached CDN bundles that may resolve chunk workers to unpkg.
+   */
+  async ensureLocalFfmpegRuntime() {
+    const localTag = document.querySelector('script[data-ffmpeg-local="true"]');
+    const localLoaded = !!localTag && !!window.FFmpegWASM && !!window.FFmpegUtil;
+    if (localLoaded) return;
+
+    const loadScript = (src, marker) => new Promise((resolve, reject) => {
+      const existing = marker ? document.querySelector(`script[data-ffmpeg-local="${marker}"]`) : null;
+      if (existing) existing.remove();
+
+      const script = document.createElement('script');
+      script.src = `${src}?v=${Date.now()}`;
+      if (marker) script.setAttribute('data-ffmpeg-local', marker);
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.head.appendChild(script);
+    });
+
+    // Reset globals so local bundles replace any stale CDN-loaded instances.
+    window.FFmpegWASM = undefined;
+    window.FFmpegUtil = undefined;
+
+    await loadScript('vendor/ffmpeg/ffmpeg.js', 'true');
+    await loadScript('vendor/ffmpeg/util.js', 'util');
+  }
+
+  /**
    * Initialize canvas with target resolution
    */
   initCanvas() {
@@ -294,6 +323,8 @@ class VideoExporter {
    * Convert webm blob to mp4 using FFmpeg.js
    */
   async convertToMp4(webmBlob) {
+    await this.ensureLocalFfmpegRuntime();
+
     const ffmpegGlobal = window.FFmpegWASM;
     const utilGlobal = window.FFmpegUtil;
     if (!ffmpegGlobal?.FFmpeg || !utilGlobal?.fetchFile) {
