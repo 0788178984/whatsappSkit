@@ -305,24 +305,21 @@ class VideoExporter {
     }
 
     if (!this.ffmpegLoaded) {
-      // Keep core version aligned with @ffmpeg/ffmpeg version in index.html
-      const base = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
+      // Serve ffmpeg core assets locally to avoid cross-origin worker restrictions.
+      const base = 'vendor/ffmpeg';
       const canBlobify = typeof utilGlobal.toBlobURL === 'function';
       const usingFileProtocol = window.location.protocol === 'file:';
 
       let coreURL = `${base}/ffmpeg-core.js`;
       let wasmURL = `${base}/ffmpeg-core.wasm`;
-      let workerURL = `${base}/ffmpeg-core.worker.js`;
 
-      // Under file://, browser blocks cross-origin worker scripts.
-      // Convert remote core/wasm/worker URLs into same-origin blob URLs.
+      // Under file://, convert assets to blob URLs for same-origin loading.
       if (canBlobify && usingFileProtocol) {
         coreURL = await utilGlobal.toBlobURL(coreURL, 'text/javascript');
         wasmURL = await utilGlobal.toBlobURL(wasmURL, 'application/wasm');
-        workerURL = await utilGlobal.toBlobURL(workerURL, 'text/javascript');
       }
 
-      await this.ffmpeg.load({ coreURL, wasmURL, workerURL });
+      await this.ffmpeg.load({ coreURL, wasmURL });
       this.ffmpegLoaded = true;
     }
 
