@@ -1,0 +1,39 @@
+{
+  "name": "whatsapp-skit-maker",
+  "version": "1.0.0",
+  "description": "Create realistic WhatsApp chat videos from skit stories",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 3000",
+    "dev": "npx live-server --port=3000 --no-browser",
+    "build": "echo 'No build step required - pure HTML/JS app'",
+    "test": "echo 'Open http://localhost:3000 in browser to test'"
+  },
+  "keywords": [
+    "whatsapp",
+    "chat",
+    "skit",
+    "video",
+    "tiktok",
+    "content-creation",
+    "screen-recording"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "serve": "^14.2.0"
+  },
+  "optionalDependencies": {
+    "html-to-image": "^1.11.11",
+    "html2canvas": "^1.4.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "homepage": ""
+}

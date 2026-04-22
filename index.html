@@ -37,6 +37,10 @@
           </div>
         </div>
         <div class="form-group">
+          <label>Custom Avatar Photo</label>
+          <input type="file" id="avatarPhoto" accept="image/*">
+        </div>
+        <div class="form-group">
           <label>
             <input type="checkbox" id="showOnline" checked> Show Online Status
           </label>
@@ -66,6 +70,72 @@
               <option value="slow">Slow</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Wallpaper</h3>
+        <div class="form-group">
+          <label>Theme</label>
+          <select id="wallpaperTheme">
+            <option value="default" selected>WhatsApp Default</option>
+            <option value="dark">Dark Chat</option>
+            <option value="mint">Mint Soft</option>
+            <option value="pink">Warm Pink</option>
+            <option value="blue">Cool Blue</option>
+            <option value="custom">Custom Media</option>
+          </select>
+        </div>
+        <div class="form-group" id="wallpaperMediaGroup">
+          <label>Custom Photo or Video</label>
+          <input type="file" id="wallpaperMedia" accept="image/*,video/*">
+        </div>
+        <div class="form-group">
+          <label>Wallpaper Opacity <span id="wallpaperOpacityValue">60%</span></label>
+          <input type="range" id="wallpaperOpacity" min="0" max="100" value="60">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Sound Effects</h3>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="enableSounds" checked> Enable message sounds
+          </label>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sent message sound</label>
+            <select id="sentSoundType">
+              <option value="pop" selected>Pop</option>
+              <option value="coin">Coin</option>
+              <option value="ring">Ringtone</option>
+              <option value="none">None</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Received message sound</label>
+            <select id="receivedSoundType">
+              <option value="coin" selected>Coin</option>
+              <option value="pop">Pop</option>
+              <option value="ring">Ringtone</option>
+              <option value="none">None</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Custom sent sound</label>
+          <input type="file" id="customSentSound" accept="audio/*">
+        </div>
+        <div class="form-group">
+          <label>Custom received sound</label>
+          <input type="file" id="customReceivedSound" accept="audio/*">
+        </div>
+        <div class="form-group">
+          <label>Sound Volume <span id="soundVolumeValue">70%</span></label>
+          <input type="range" id="soundVolume" min="0" max="100" value="70">
         </div>
       </div>
 
@@ -117,6 +187,9 @@ THEM: Ohhh Lucky 😄
             <input type="checkbox" id="autoPlayRecord" checked> Auto-start recording on play
           </label>
         </div>
+        <div class="script-help" style="margin-bottom: 12px;">
+          Records only the WhatsApp chat (no screen permission needed)
+        </div>
         <button class="btn btn-primary" id="exportBtn" onclick="startExport()">
           🎬 Preview & Export Video
         </button>
@@ -147,6 +220,7 @@ THEM: Ohhh Lucky 😄
             <div class="back-btn">‹</div>
             <div class="avatar" id="headerAvatar">
               <span id="avatarInitial">A</span>
+              <img id="avatarImage" class="avatar-image" alt="Avatar">
               <div class="online-dot" id="onlineDot"></div>
             </div>
             <div class="header-info">
@@ -161,18 +235,46 @@ THEM: Ohhh Lucky 😄
 
           <!-- Chat Area -->
           <div class="chat-area" id="chatArea">
+            <div class="chat-wallpaper theme-default" id="chatWallpaper">
+              <img class="wallpaper-image" id="wallpaperImage" alt="">
+              <video class="wallpaper-video" id="wallpaperVideo" autoplay muted loop playsinline></video>
+            </div>
             <div class="date-chip" id="dateChip">Today</div>
           </div>
 
           <!-- Input Area -->
           <div class="input-area">
             <div class="input-left">
-              <span class="emoji-btn">🙂</span>
+              <span class="icon-btn emoji-btn" aria-hidden="true">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8.2" stroke="currentColor" stroke-width="1.8"/>
+                  <circle cx="9.2" cy="10.4" r="1" fill="currentColor"/>
+                  <circle cx="14.8" cy="10.4" r="1" fill="currentColor"/>
+                  <path d="M8.6 14.1c.9 1.1 2.05 1.6 3.4 1.6s2.5-.5 3.4-1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+              </span>
               <div class="input-box" id="inputBox">Message</div>
             </div>
             <div class="input-right">
-              <span class="attach-btn">📎</span>
-              <button class="send-btn">➤</button>
+              <span class="icon-btn attach-btn" aria-hidden="true">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M8.8 12.8 14.7 6.9a3.2 3.2 0 1 1 4.5 4.5l-7.4 7.4a5 5 0 0 1-7.1-7.1l8.2-8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="icon-btn camera-btn" aria-hidden="true">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M8.2 7.7h2.2l1.1-1.5h4.3l1.1 1.5h1.2c1.4 0 2.5 1.1 2.5 2.5v6.2c0 1.4-1.1 2.5-2.5 2.5H6.9c-1.4 0-2.5-1.1-2.5-2.5v-6.2c0-1.4 1.1-2.5 2.5-2.5h1.3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                  <circle cx="12.5" cy="13.2" r="2.6" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+              </span>
+              <button class="send-btn mic-btn" aria-label="Voice message">
+                <svg class="icon-svg mic-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="9.2" y="4.2" width="5.6" height="10.2" rx="2.8" stroke="currentColor" stroke-width="1.9"/>
+                  <path d="M6.9 11.8a5.1 5.1 0 0 0 10.2 0" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                  <path d="M12 17.1v2.7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                  <path d="M9.8 19.8h4.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -205,6 +307,7 @@ THEM: Ohhh Lucky 😄
   <!-- Hidden canvas for video capture -->
   <canvas id="captureCanvas" style="display: none;"></canvas>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="skit-parser.js"></script>
   <script src="whatsapp-renderer.js"></script>
   <script src="video-exporter.js"></script>
