@@ -259,19 +259,23 @@ function playCustomSound(target, volume) {
 }
 
 function playMessageSound(msg) {
-  if (!AppState.sound.enabled || !msg || msg.type !== 'message') return;
+  try {
+    if (!AppState.sound.enabled || !msg || msg.type !== 'message') return;
 
-  const isSent = msg.s === 'sent';
-  const soundType = isSent ? AppState.sound.sentType : AppState.sound.receivedType;
-  const target = isSent ? 'sent' : 'received';
+    const isSent = msg.s === 'sent';
+    const soundType = isSent ? AppState.sound.sentType : AppState.sound.receivedType;
+    const target = isSent ? 'sent' : 'received';
 
-  if (soundType === 'custom') {
-    const played = playCustomSound(target, AppState.sound.volume);
-    if (!played) playPresetSound(isSent ? 'pop' : 'coin', AppState.sound.volume);
-    return;
+    if (soundType === 'custom') {
+      const played = playCustomSound(target, AppState.sound.volume);
+      if (!played) playPresetSound(isSent ? 'pop' : 'coin', AppState.sound.volume);
+      return;
+    }
+
+    playPresetSound(soundType, AppState.sound.volume);
+  } catch (err) {
+    console.warn('Message sound failed:', err);
   }
-
-  playPresetSound(soundType, AppState.sound.volume);
 }
 
 function updateContactSettings() {
@@ -319,7 +323,9 @@ function updateWallpaperSettings() {
   wallpaper.className = `chat-wallpaper theme-${themeSelect.value}`;
   if (hasImage) wallpaper.classList.add('has-image');
   if (hasVideo) wallpaper.classList.add('has-video');
-  mediaGroup.style.display = themeSelect.value === 'custom' ? 'block' : 'none';
+  if (mediaGroup) {
+    mediaGroup.style.display = themeSelect.value === 'custom' ? 'block' : 'none';
+  }
 
   if (themeSelect.value !== 'custom') {
     wallpaper.classList.remove('has-image', 'has-video');
