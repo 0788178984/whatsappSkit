@@ -336,10 +336,20 @@ class VideoExporter {
       this.ffmpeg = new ffmpegGlobal.FFmpeg();
     }
 
-    const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+    const onStatus = typeof options.onStatus === 'function' ? options.onStatus : null;
     const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 180000; // 3 minutes
+    const encodingTargetMs = Number.isFinite(options.encodingTargetMs) ? options.encodingTargetMs : 70000;
+
+    const report = (stage, pct) => {
+      if (!onStatus) return;
+      const safePct = typeof pct === 'number' ? Math.max(0, Math.min(100, Math.round(pct))) : undefined;
+      try {
+        onStatus({ stage, pct: safePct });
+      } catch (e) {}
+    };
 
     if (!this.ffmpegLoaded) {
+      report('Loading converter', 10);
       // Serve ffmpeg core assets locally to avoid cross-origin worker restrictions.
       const base = 'vendor/ffmpeg';
       const canBlobify = typeof utilGlobal.toBlobURL === 'function';
@@ -359,19 +369,25 @@ class VideoExporter {
     }
 
     // Attach progress callback if supported by this ffmpeg build.
-    if (onProgress && typeof this.ffmpeg.on === 'function') {
+    // If not available, we still show stage/elapsed-based progress from the caller.
+    if (onStatus && typeof this.ffmpeg.on === 'function') {
       try {
         this.ffmpeg.on('progress', ({ progress }) => {
-          if (typeof progress === 'number') onProgress(progress);
+          if (typeof progress === 'number') {
+            // Reserve 40..95 for encoding
+            report('Encoding', 40 + progress * 55);
+          }
         });
       } catch (e) {}
     }
 
     const inputName = `input-${Date.now()}.webm`;
     const outputName = `output-${Date.now()}.mp4`;
+    report('Preparing input', 20);
     await this.ffmpeg.writeFile(inputName, await utilGlobal.fetchFile(webmBlob));
 
     try {
+      report('Encoding', 40);
       // Prefer H.264 for TikTok compatibility.
       // Different ffmpeg wasm builds expose different encoder names, so try multiple.
       let converted = false;
@@ -402,8 +418,8 @@ class VideoExporter {
           '-vf', 'scale=720:-2',
           '-r', '30',
           '-c:v', 'libx264',
-          '-preset', 'ultrafast',
-          '-crf', '28',
+          '-preset', 'veryfast',
+          '-crf', '23',
           '-pix_fmt', 'yuv420p',
           '-movflags', '+faststart',
           '-an',
@@ -414,7 +430,7 @@ class VideoExporter {
           '-vf', 'scale=720:-2',
           '-r', '30',
           '-c:v', 'mpeg4',
-          '-q:v', '5',
+          '-q:v', '3',
           '-pix_fmt', 'yuv420p',
           '-movflags', '+faststart',
           '-an',
@@ -431,6 +447,15 @@ class VideoExporter {
         ]);
       };
 
+      // If ffmpeg doesn't emit progress, callers will show elapsed-time progress.
+      // But we can still provide a soft ramp here so UI moves even without events.
+      const encodingStartedAt = Date.now();
+      const softRamp = onStatus ? setInterval(() => {
+        const elapsed = Date.now() - encodingStartedAt;
+        const est = 40 + Math.min(55, (elapsed / Math.max(1000, encodingTargetMs)) * 55);
+        report('Encoding', est);
+      }, 1000) : null;
+
       for (const profile of conversionProfiles) {
         try {
           await runWithTimeout(profile);
@@ -442,12 +467,16 @@ class VideoExporter {
         }
       }
 
+      if (softRamp) clearInterval(softRamp);
+
       if (!converted) {
         const reason = lastError?.message || String(lastError || 'unknown error');
         throw new Error(`All MP4 conversion profiles failed in this browser: ${reason}`);
       }
 
+      report('Finalizing', 96);
       const data = await this.ffmpeg.readFile(outputName);
+      report('Done', 100);
       return new Blob([data.buffer], { type: 'video/mp4' });
     } finally {
       try { await this.ffmpeg.deleteFile(inputName); } catch (e) {}

@@ -631,21 +631,23 @@ async function stopRecording() {
 
       const startedAt = Date.now();
       let lastPct = 0;
+      let lastStage = 'Encoding';
       const tick = setInterval(() => {
         if (!exportBtn) return;
         const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-        exportBtn.textContent = `⏳ Converting to TikTok MP4... ${lastPct}% (${elapsed}s)`;
+        exportBtn.textContent = `⏳ ${lastStage}... ${lastPct}% (${elapsed}s)`;
       }, 1000);
 
       try {
         blob = await AppState.exporter.convertToMp4(blob, {
           timeoutMs: 180000,
-          onProgress: (p) => {
+          encodingTargetMs: 70000,
+          onStatus: ({ stage, pct }) => {
+            if (typeof stage === 'string') lastStage = stage;
+            if (typeof pct === 'number') lastPct = pct;
             if (!exportBtn) return;
-            const pct = Math.max(0, Math.min(100, Math.round(p * 100)));
-            lastPct = pct;
-            exportBtn.textContent = `⏳ Converting to TikTok MP4... ${pct}%`;
-          }
+            exportBtn.textContent = `⏳ ${lastStage}... ${lastPct}%`;
+          },
         });
       } catch (convertErr) {
         console.warn('TikTok MP4 conversion failed, keeping WebM:', convertErr);
