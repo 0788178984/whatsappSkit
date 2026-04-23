@@ -44,6 +44,8 @@ class SkitParser {
     let currentSender = null;
     let senders = new Map();
     let senderCounter = 0;
+    let lastMessageTime = null;
+    const pendingUntimedMessageIndexes = [];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -92,6 +94,26 @@ class SkitParser {
       const message = this.parseMessageLine(line, currentSender, senders, senderCounter);
       
       if (message) {
+        // Keep timeline coherent: if a line has no explicit time, inherit
+        // the last visible chat time instead of using the current clock.
+        if (message.hasExplicitTime) {
+          lastMessageTime = message.time;
+          // Backfill any earlier messages that appeared before
+          // the first explicit timestamp in the script.
+          if (pendingUntimedMessageIndexes.length) {
+            pendingUntimedMessageIndexes.forEach((idx) => {
+              if (result.messages[idx]) {
+                result.messages[idx].time = lastMessageTime;
+              }
+            });
+            pendingUntimedMessageIndexes.length = 0;
+          }
+        } else if (lastMessageTime) {
+          message.time = lastMessageTime;
+        } else {
+          pendingUntimedMessageIndexes.push(result.messages.length);
+        }
+
         // Track senders for auto-detection
         if (message.senderType === 'sent') {
           currentSender = 'me';
@@ -106,10 +128,43 @@ class SkitParser {
       }
     }
     
+    // Keep scripted times believable relative to the phone clock.
+    this.normalizeMessageTimesToCurrentClock(result.messages);
+
     // Auto-assign sender types for named senders
     this.assignSenderTypes(result.messages);
     
     return result;
+  }
+
+  /**
+   * Shift parsed message times toward current phone time when too far apart.
+   * Preserves the relative spacing between messages.
+   */
+  normalizeMessageTimesToCurrentClock(messages) {
+    if (!Array.isArray(messages) || !messages.length) return;
+
+    const firstTimedMessage = messages.find(
+      (msg) => msg?.type === 'message' && typeof msg.time === 'string' && msg.time.trim()
+    );
+    if (!firstTimedMessage) return;
+
+    const firstMinutes = this.timeStringToMinutes(firstTimedMessage.time);
+    if (firstMinutes == null) return;
+
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const offset = this.closestMinuteOffset(firstMinutes, nowMinutes);
+
+    // Allow natural drift, only normalize when the gap is large.
+    if (Math.abs(offset) <= 90) return;
+
+    messages.forEach((msg) => {
+      if (msg?.type !== 'message' || !msg.time) return;
+      const mins = this.timeStringToMinutes(msg.time);
+      if (mins == null) return;
+      msg.time = this.minutesToTimeString(mins + offset);
+    });
   }
 
   /**
@@ -154,6 +209,7 @@ class SkitParser {
       senderName: senderName,
       t: content,
       time: time || this.getCurrentTime(),
+      hasExplicitTime: !!time,
       reaction: null
     };
   }
@@ -169,6 +225,46 @@ class SkitParser {
     timeStr = timeStr.replace(/([AP])M/i, '$1M');
     
     return timeStr;
+  }
+
+  timeStringToMinutes(timeStr) {
+    const match = String(timeStr || '')
+      .trim()
+      .match(/^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$/i);
+    if (!match) return null;
+
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const meridiem = (match[3] || '').toUpperCase();
+
+    if (minutes < 0 || minutes > 59 || hours < 0 || hours > 23) return null;
+
+    if (meridiem) {
+      if (hours < 1 || hours > 12) return null;
+      if (hours === 12) hours = 0;
+      if (meridiem === 'PM') hours += 12;
+    }
+
+    return hours * 60 + minutes;
+  }
+
+  minutesToTimeString(totalMinutes) {
+    const day = 24 * 60;
+    const normalized = ((totalMinutes % day) + day) % day;
+    let hours24 = Math.floor(normalized / 60);
+    const minutes = normalized % 60;
+    const ampm = hours24 >= 12 ? 'PM' : 'AM';
+    let hours12 = hours24 % 12;
+    if (hours12 === 0) hours12 = 12;
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  }
+
+  closestMinuteOffset(fromMinutes, toMinutes) {
+    const day = 24 * 60;
+    let diff = toMinutes - fromMinutes;
+    if (diff > day / 2) diff -= day;
+    if (diff < -day / 2) diff += day;
+    return diff;
   }
 
   /**
