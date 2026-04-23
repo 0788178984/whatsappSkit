@@ -32,6 +32,10 @@ class AIClient {
     }
     this.lastRequestTime = Date.now();
 
+    console.log('Making request to:', `${OPENROUTER_BASE_URL}${endpoint}`);
+    console.log('Model:', data.model);
+    console.log('API Key (first 10 chars):', this.apiKey.substring(0, 10) + '...');
+
     const response = await fetch(`${OPENROUTER_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -44,8 +48,15 @@ class AIClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
-      throw new Error(error.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      let error;
+      try {
+        error = JSON.parse(errorText);
+      } catch (e) {
+        error = { error: { message: errorText } };
+      }
+      throw new Error(error.error?.message || error.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
     return await response.json();
