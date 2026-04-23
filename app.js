@@ -251,6 +251,7 @@ function initApp() {
   // Set up event listeners
   setupEventListeners();
   setupSoundSettings();
+  setupAIMode();
   restorePersistedAssets(persisted);
   updateContactSettings();
 
@@ -1382,5 +1383,109 @@ async function loadSettingsFromCloud() {
     alert('Settings loaded from cloud!');
   } catch (err) {
     alert('Failed to load: ' + err.message);
+  }
+}
+
+// AI Mode Functions
+async function generateAIScript() {
+  const apiKey = document.getElementById('openRouterApiKey').value;
+  const prompt = document.getElementById('aiPromptInput').value;
+  const statusEl = document.getElementById('aiStatus');
+  
+  if (!apiKey) {
+    alert('Please enter your OpenRouter API key');
+    return;
+  }
+  
+  if (!prompt) {
+    alert('Please enter a prompt to generate a script');
+    return;
+  }
+  
+  // Save API key to local storage
+  if (window.AIClient) {
+    window.AIClient.saveApiKey(apiKey);
+  }
+  
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Generating script...';
+  statusEl.className = 'ai-status loading';
+  
+  try {
+    const client = window.AIClient || new AIClient(apiKey);
+    const script = await client.generateScript(prompt);
+    
+    // Populate the script textarea
+    document.getElementById('skitScript').value = script;
+    parseAndPreview();
+    
+    statusEl.textContent = 'Script generated successfully!';
+    statusEl.className = 'ai-status success';
+    setTimeout(() => statusEl.style.display = 'none', 3000);
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.className = 'ai-status error';
+  }
+}
+
+async function organizeAIScript() {
+  const apiKey = document.getElementById('openRouterApiKey').value;
+  const rawText = document.getElementById('aiPromptInput').value;
+  const statusEl = document.getElementById('aiStatus');
+  
+  if (!apiKey) {
+    alert('Please enter your OpenRouter API key');
+    return;
+  }
+  
+  if (!rawText) {
+    alert('Please enter raw text to organize');
+    return;
+  }
+  
+  // Save API key to local storage
+  if (window.AIClient) {
+    window.AIClient.saveApiKey(apiKey);
+  }
+  
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Organizing script...';
+  statusEl.className = 'ai-status loading';
+  
+  try {
+    const client = window.AIClient || new AIClient(apiKey);
+    const organizedScript = await client.organizeScript(rawText);
+    
+    // Populate the script textarea
+    document.getElementById('skitScript').value = organizedScript;
+    parseAndPreview();
+    
+    statusEl.textContent = 'Script organized successfully!';
+    statusEl.className = 'ai-status success';
+    setTimeout(() => statusEl.style.display = 'none', 3000);
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.className = 'ai-status error';
+  }
+}
+
+function setupAIMode() {
+  const enableToggle = document.getElementById('enableAIMode');
+  const aiModeSection = document.getElementById('aiModeSection');
+  const apiKeyInput = document.getElementById('openRouterApiKey');
+  
+  // Toggle AI mode section
+  if (enableToggle) {
+    enableToggle.addEventListener('change', (e) => {
+      aiModeSection.style.display = e.target.checked ? 'block' : 'none';
+    });
+  }
+  
+  // Load saved API key
+  if (apiKeyInput && window.AIClient) {
+    const savedKey = window.AIClient.loadApiKey();
+    if (savedKey) {
+      apiKeyInput.value = savedKey;
+    }
   }
 }
