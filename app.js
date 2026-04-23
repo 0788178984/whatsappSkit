@@ -175,6 +175,14 @@ function savePersistedSettings(nextSettings) {
       console.warn('Large media assets could not be saved, but core settings were preserved.');
     }
   }
+
+  // Auto-sync to cloud if authenticated
+  if (typeof FirebaseStorage !== 'undefined' && FirebaseStorage.getCurrentUser()) {
+    const fullSettings = { ...loadStoredObject(SETTINGS_CORE_STORAGE_KEY), ...loadStoredObject(SETTINGS_ASSETS_STORAGE_KEY) };
+    FirebaseStorage.saveSettings(fullSettings).catch(err => {
+      console.warn('Failed to auto-sync settings to cloud:', err.message);
+    });
+  }
 }
 
 function clearPersistedAssetSetting(key) {
