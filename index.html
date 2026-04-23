@@ -147,7 +147,12 @@
           Use <code>ME:</code> for sent messages, <code>THEM:</code> for received<br>
           Add reactions with <code>--reaction: emoji</code>
         </div>
-        <textarea id="skitScript" placeholder="Paste your skit story here...
+        <div class="script-editor-shell">
+          <div class="script-editor-topbar">
+            <span class="script-chip">Live Script</span>
+            <span class="script-stats" id="scriptStats">0 lines • 0 chars</span>
+          </div>
+          <textarea id="skitScript" placeholder="Paste your skit story here...
 
 Example:
 ME: Hey... is this Angella? 😅
@@ -155,6 +160,7 @@ ME: Hey... is this Angella? 😅
 ME: It's Lucky. From church.
 THEM: Ohhh Lucky 😄
 --reaction: 🥹"></textarea>
+        </div>
         <div class="script-actions">
           <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
           <button class="btn btn-secondary" onclick="clearScript()">Clear</button>
@@ -227,7 +233,8 @@ THEM: Ohhh Lucky 😄
               <div class="signal">
                 <span></span><span></span><span></span><span></span>
               </div>
-              <span class="network">4G</span>
+              <span class="network" id="networkType">4G</span>
+              <span class="data-flow" id="dataFlowStatus">0.0 kb</span>
               <div class="battery">
                 <div class="battery-fill"></div>
               </div>

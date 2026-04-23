@@ -29,7 +29,13 @@ const AppState = {
     receivedType: 'coin',
     volume: 0.7
   },
-  audioContext: null
+  audioContext: null,
+  connectivityTimer: null,
+  connectivity: {
+    signalBars: 4,
+    networkType: '4G',
+    kbps: 0
+  }
 };
 
 // Example skit data
@@ -80,6 +86,8 @@ function initApp() {
   // Set up event listeners
   setupEventListeners();
   setupSoundSettings();
+  updateScriptStats();
+  startConnectivitySimulation();
 
   AppState.renderer.onMessageCallback = (msg) => {
     playMessageSound(msg);
@@ -136,6 +144,54 @@ function setupEventListeners() {
   
   // Script changes
   document.getElementById('skitScript')?.addEventListener('input', debounce(parseAndPreview, 500));
+  document.getElementById('skitScript')?.addEventListener('input', updateScriptStats);
+}
+
+function updateScriptStats() {
+  const scriptEl = document.getElementById('skitScript');
+  const statsEl = document.getElementById('scriptStats');
+  if (!scriptEl || !statsEl) return;
+
+  const text = scriptEl.value || '';
+  const lines = text.length ? text.split(/\r?\n/).length : 0;
+  const chars = text.length;
+  statsEl.textContent = `${lines} lines • ${chars} chars`;
+}
+
+function startConnectivitySimulation() {
+  updateConnectivityStatus(true);
+  if (AppState.connectivityTimer) clearInterval(AppState.connectivityTimer);
+  AppState.connectivityTimer = setInterval(() => updateConnectivityStatus(false), 1500);
+}
+
+function updateConnectivityStatus(isInitial = false) {
+  const signalEls = document.querySelectorAll('.signal span');
+  const networkTypeEl = document.getElementById('networkType');
+  const dataFlowEl = document.getElementById('dataFlowStatus');
+  if (!signalEls.length || !networkTypeEl || !dataFlowEl) return;
+
+  const randomDrop = Math.random();
+  if (!isInitial && randomDrop < 0.08) {
+    AppState.connectivity.signalBars = Math.max(1, AppState.connectivity.signalBars - 1);
+  } else if (!isInitial && randomDrop > 0.72) {
+    AppState.connectivity.signalBars = Math.min(4, AppState.connectivity.signalBars + 1);
+  }
+
+  const baseFlow = {
+    '4G': [12, 180]
+  };
+  AppState.connectivity.networkType = '4G';
+  const [minFlow, maxFlow] = baseFlow[AppState.connectivity.networkType];
+  const weakFactor = 0.45 + (AppState.connectivity.signalBars / 4) * 0.75;
+  const jitter = Math.random() * (maxFlow - minFlow) + minFlow;
+  AppState.connectivity.kbps = Math.max(0.5, jitter * weakFactor);
+
+  signalEls.forEach((bar, idx) => {
+    bar.style.opacity = idx < AppState.connectivity.signalBars ? '0.95' : '0.28';
+  });
+
+  networkTypeEl.textContent = AppState.connectivity.networkType;
+  dataFlowEl.textContent = `${AppState.connectivity.kbps.toFixed(1)} kb`;
 }
 
 function setupSoundSettings() {
@@ -777,11 +833,13 @@ function newExport() {
 
 function loadExample() {
   document.getElementById('skitScript').value = EXAMPLE_SKIT;
+  updateScriptStats();
   parseAndPreview();
 }
 
 function clearScript() {
   document.getElementById('skitScript').value = '';
+  updateScriptStats();
   AppState.currentSkit = null;
   AppState.renderer.clearChat();
 }
@@ -831,6 +889,10 @@ function scheduleDateUpdate() {
 }
 
 window.addEventListener('beforeunload', () => {
+  if (AppState.connectivityTimer) {
+    clearInterval(AppState.connectivityTimer);
+    AppState.connectivityTimer = null;
+  }
   if (AppState.wallpaperUrl) {
     URL.revokeObjectURL(AppState.wallpaperUrl);
   }

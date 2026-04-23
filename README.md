@@ -65,6 +65,46 @@ THEM: What is it?
 ME: I like you ❤️
 ```
 
+## 🎬 Animation Rules Guide
+
+This is how lines are animated in order, so you can script scenes predictably:
+
+1. **Parse top-to-bottom**: Each line is processed in sequence.
+2. **`ME:` lines**:
+   - show keyboard/input typing animation
+   - then send as a right bubble
+3. **`THEM:` lines**:
+   - show `typing...` indicator
+   - then render as a left bubble
+4. **`PAUSE: X`**:
+   - waits `X` seconds before the next line
+5. **`--reaction:`**:
+   - attaches to the previous message only
+6. **Timestamped lines**:
+   - keep your exact message time in metadata
+7. **Date/title directives**:
+   - `DATE:` updates date chip
+   - `TITLE:` appends to date header
+
+### Recommended Writing Flow
+
+Use this pattern for realistic pacing:
+
+```text
+ME: Hey...
+PAUSE: 1
+THEM: Who is this?
+PAUSE: 2
+ME: It's me 😊
+--reaction: ❤️
+```
+
+### Common Script Mistakes
+
+- **No sender prefix**: a line without `ME:` / `THEM:` may be ignored.
+- **Wrong reaction position**: `--reaction:` must come after the message it belongs to.
+- **Huge single messages**: very long text can feel less realistic; split into 2-3 lines.
+
 ## 🎨 Script Syntax Reference
 
 | Syntax | Description |
