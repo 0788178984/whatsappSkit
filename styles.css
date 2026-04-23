@@ -441,6 +441,7 @@ textarea {
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: rgba(0,0,0,0.2) transparent;
+  padding-bottom: 58px;
 }
 
 .chat-area::-webkit-scrollbar {
@@ -738,6 +739,13 @@ textarea {
   align-items: flex-end;
   gap: 8px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 25;
+  transition: transform 220ms ease;
+}
+
+.phone.keyboard-open .input-area {
+  transform: translateY(-206px);
 }
 
 .input-left {
@@ -773,6 +781,8 @@ textarea {
   align-items: center;
   gap: 2px;
   min-height: 20px;
+  max-height: 58px;
+  overflow-y: auto;
 }
 
 .input-placeholder {
@@ -821,22 +831,39 @@ textarea {
 
 .keyboard-top {
   background: rgba(240, 242, 245, 0.98);
-  padding: 6px 10px;
+  padding: 6px 10px 8px;
   border-top: 1px solid rgba(0,0,0,0.08);
 }
 
 .compose-preview {
-  font-size: 12px;
+  font-size: 13px;
   color: #1f2c34;
-  min-height: 16px;
-  white-space: nowrap;
+  min-height: 18px;
+  white-space: pre-wrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.suggestion-bar {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.suggestion-chip {
+  background: #ffffff;
+  color: #3b4a54;
+  font-size: 11px;
+  border-radius: 12px;
+  padding: 4px 8px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
 }
 
 .keyboard {
   background: #d9dde3;
-  padding: 10px 10px 12px;
+  padding: 8px 10px 12px;
 }
 
 .kb-row {

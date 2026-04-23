@@ -29,6 +29,7 @@ class WhatsAppRenderer {
     this.inputText = document.querySelector('#inputText');
     this.keyboardOverlay = document.querySelector('#keyboardOverlay');
     this.composePreview = document.querySelector('#composePreview');
+    this.suggestionBar = document.querySelector('#suggestionBar');
     
     this.isPlaying = false;
     this.timeouts = [];
@@ -136,17 +137,34 @@ class WhatsAppRenderer {
   setKeyboardVisible(visible) {
     if (!this.keyboardOverlay) return;
     this.keyboardOverlay.classList.toggle('show', !!visible);
+    this.phone?.classList.toggle('keyboard-open', !!visible);
   }
 
   setComposePreview(text) {
     if (!this.composePreview) return;
-    this.composePreview.textContent = text || '';
+    const value = text || '';
+    this.composePreview.textContent = value;
+    this.updateSuggestions(value);
   }
 
   setInputText(text) {
     if (!this.inputText || !this.inputBox) return;
-    this.inputText.textContent = text || '';
-    this.inputBox.classList.toggle('typing', !!text);
+    const value = text || '';
+    this.inputText.textContent = value;
+    this.inputBox.classList.toggle('typing', !!value);
+    this.updateSuggestions(value);
+  }
+
+  updateSuggestions(text) {
+    if (!this.suggestionBar) return;
+    const src = String(text || '').trim().toLowerCase();
+    const base = ['😊 nice', '😂 haha', '❤️ love'];
+    let list = base;
+    if (src.endsWith('?')) list = ['🤔 maybe', '😅 okay', '🙏 please'];
+    else if (src.includes('love')) list = ['❤️ love you', '🥰 babe', '😘 kiss'];
+    else if (src.includes('sorry')) list = ['🙏 sorry', '😔 my bad', '🤍 forgive me'];
+    else if (src.endsWith('!')) list = ['🔥 wow', '😮 yes!', '👏 nice'];
+    this.suggestionBar.innerHTML = list.map(item => `<span class="suggestion-chip">${item}</span>`).join('');
   }
 
   flashKey(key) {
