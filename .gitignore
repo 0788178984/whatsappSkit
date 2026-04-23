@@ -3,6 +3,7 @@ package-lock.json
 .DS_Store
 Thumbs.db
 *.log
+.env
 
 # Playwright downloads/browsers (if any)
 .playwright/

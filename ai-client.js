@@ -17,7 +17,7 @@ const FREE_MODELS = [
 
 class AIClient {
   constructor(apiKey = null) {
-    this.apiKey = apiKey || this.loadApiKey();
+    this.apiKey = apiKey || process.env.OPENROUTER_API_KEY || this.loadApiKey();
     this.currentModel = FREE_MODELS[0]; // Start with smart router
     this.rateLimitDelay = 1000; // 1 second between requests
     this.lastRequestTime = 0;
