@@ -16,11 +16,20 @@ const FREE_MODELS = [
 ];
 
 class AIClient {
-  constructor() {
-    this.apiKey = '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';
+  constructor(apiKey = null) {
+    this.apiKey = apiKey || this.loadApiKey();
     this.currentModel = FREE_MODELS[0]; // Start with smart router
     this.rateLimitDelay = 1000; // 1 second between requests
     this.lastRequestTime = 0;
+  }
+
+  loadApiKey() {
+    return localStorage.getItem('openrouter_api_key') || '';
+  }
+
+  saveApiKey(apiKey) {
+    this.apiKey = apiKey;
+    localStorage.setItem('openrouter_api_key', apiKey);
   }
 
   async makeRequest(endpoint, data) {
@@ -31,10 +40,6 @@ class AIClient {
       await new Promise(resolve => setTimeout(resolve, this.rateLimitDelay - timeSinceLastRequest));
     }
     this.lastRequestTime = Date.now();
-
-    console.log('Making request to:', `${OPENROUTER_BASE_URL}${endpoint}`);
-    console.log('Model:', data.model);
-    console.log('API Key (first 10 chars):', this.apiKey.substring(0, 10) + '...');
 
     const response = await fetch(`${OPENROUTER_BASE_URL}${endpoint}`, {
       method: 'POST',
@@ -48,15 +53,8 @@ class AIClient {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      let error;
-      try {
-        error = JSON.parse(errorText);
-      } catch (e) {
-        error = { error: { message: errorText } };
-      }
-      throw new Error(error.error?.message || error.message || `HTTP ${response.status}: ${response.statusText}`);
+      const error = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
+      throw new Error(error.error?.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
     return await response.json();
