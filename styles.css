@@ -630,18 +630,15 @@ textarea {
   flex-direction: column;
   gap: 3px;
   position: relative;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0,0,0,0.2) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   padding-bottom: 58px;
 }
 
 .chat-area::-webkit-scrollbar {
-  width: 4px;
-}
-
-.chat-area::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.2);
-  border-radius: 2px;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .chat-wallpaper {

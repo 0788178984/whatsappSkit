@@ -41,29 +41,53 @@ class VideoExporter {
    * This bypasses stale cached CDN bundles that may resolve chunk workers to unpkg.
    */
   async ensureLocalFfmpegRuntime() {
-    const localTag = document.querySelector('script[data-ffmpeg-local="true"]');
-    const localLoaded = !!localTag && !!window.FFmpegWASM && !!window.FFmpegUtil;
-    if (localLoaded) return;
+    if (window.FFmpegWASM?.FFmpeg && window.FFmpegUtil?.fetchFile) return;
 
-    const loadScript = (src, marker) => new Promise((resolve, reject) => {
-      const existing = marker ? document.querySelector(`script[data-ffmpeg-local="${marker}"]`) : null;
-      if (existing) existing.remove();
+    const loadScript = (urls, marker) => new Promise((resolve, reject) => {
+      const candidates = Array.isArray(urls) ? urls : [urls];
+      let index = 0;
 
-      const script = document.createElement('script');
-      const abs = new URL(src, window.location.href).toString();
-      script.src = `${abs}${abs.includes('?') ? '&' : '?'}v=${Date.now()}`;
-      if (marker) script.setAttribute('data-ffmpeg-local', marker);
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Failed to load ${src}`));
-      document.head.appendChild(script);
+      const tryNext = () => {
+        if (index >= candidates.length) {
+          reject(new Error(`Failed to load ${marker || 'ffmpeg runtime'} from local assets.`));
+          return;
+        }
+
+        const candidate = candidates[index++];
+        const existing = marker ? document.querySelector(`script[data-ffmpeg-local="${marker}"]`) : null;
+        if (existing) existing.remove();
+
+        const script = document.createElement('script');
+        script.src = `${candidate}${candidate.includes('?') ? '&' : '?'}v=${Date.now()}`;
+        if (marker) script.setAttribute('data-ffmpeg-local', marker);
+        script.onload = () => resolve();
+        script.onerror = () => {
+          script.remove();
+          tryNext();
+        };
+        document.head.appendChild(script);
+      };
+
+      tryNext();
     });
 
-    // Reset globals so local bundles replace any stale CDN-loaded instances.
-    window.FFmpegWASM = undefined;
-    window.FFmpegUtil = undefined;
+    const ffmpegUrls = [
+      new URL('vendor/ffmpeg/ffmpeg.js', window.location.href).toString(),
+      new URL('./vendor/ffmpeg/ffmpeg.js', window.location.href).toString(),
+      `${window.location.origin}/vendor/ffmpeg/ffmpeg.js`
+    ];
+    const utilUrls = [
+      new URL('vendor/ffmpeg/util.js', window.location.href).toString(),
+      new URL('./vendor/ffmpeg/util.js', window.location.href).toString(),
+      `${window.location.origin}/vendor/ffmpeg/util.js`
+    ];
 
-    await loadScript('vendor/ffmpeg/ffmpeg.js', 'true');
-    await loadScript('vendor/ffmpeg/util.js', 'util');
+    await loadScript(ffmpegUrls, 'ffmpeg');
+    await loadScript(utilUrls, 'util');
+
+    if (!window.FFmpegWASM?.FFmpeg || !window.FFmpegUtil?.fetchFile) {
+      throw new Error('FFmpeg runtime loaded, but required globals are unavailable.');
+    }
   }
 
   /**
