@@ -16,20 +16,11 @@ const FREE_MODELS = [
 ];
 
 class AIClient {
-  constructor(apiKey = null) {
-    this.apiKey = apiKey || this.loadApiKey();
+  constructor() {
+    this.apiKey = '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';
     this.currentModel = FREE_MODELS[0]; // Start with smart router
     this.rateLimitDelay = 1000; // 1 second between requests
     this.lastRequestTime = 0;
-  }
-
-  loadApiKey() {
-    return localStorage.getItem('openrouter_api_key') || '';
-  }
-
-  saveApiKey(apiKey) {
-    this.apiKey = apiKey;
-    localStorage.setItem('openrouter_api_key', apiKey);
   }
 
   async makeRequest(endpoint, data) {
