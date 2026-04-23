@@ -1400,26 +1400,3 @@ textarea {
 .modal-body .form-row .btn {
   flex: 1;
 }
-
-/* AI Mode Styles */
-.ai-status {
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-top: 12px;
-}
-
-.ai-status.loading {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.ai-status.success {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.ai-status.error {
-  background: #ffebee;
-  color: #c62828;
-}
