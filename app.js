@@ -60,6 +60,15 @@ ME: I'll take that as a yes 😄
 --reaction: ❤️`;
 
 const SETTINGS_STORAGE_KEY = 'whatsappSkitMaker.settings.v1';
+const SETTINGS_CORE_STORAGE_KEY = 'whatsappSkitMaker.settings.core.v1';
+const SETTINGS_ASSETS_STORAGE_KEY = 'whatsappSkitMaker.settings.assets.v1';
+const ASSET_SETTING_KEYS = new Set([
+  'avatarPhotoDataUrl',
+  'customSentSoundDataUrl',
+  'customReceivedSoundDataUrl',
+  'wallpaperMediaDataUrl',
+  'wallpaperMediaType'
+]);
 const PERSISTED_CONTROL_IDS = [
   'contactName',
   'contactInitial',
@@ -83,24 +92,100 @@ const PERSISTED_CONTROL_IDS = [
   'tiktokMp4'
 ];
 
-function loadPersistedSettings() {
+function loadStoredObject(key) {
   try {
-    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch (err) {
-    console.warn('Failed to load persisted settings:', err);
+    console.warn(`Failed to load persisted object: ${key}`, err);
     return {};
   }
 }
 
-function savePersistedSettings(nextSettings) {
+function saveStoredObject(key, value) {
   try {
-    const merged = { ...loadPersistedSettings(), ...nextSettings };
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch (err) {
-    console.warn('Failed to persist settings:', err);
+    console.warn(`Failed to persist object: ${key}`, err);
+    return false;
+  }
+}
+
+function migrateLegacyPersistedSettings() {
+  const legacy = loadStoredObject(SETTINGS_STORAGE_KEY);
+  if (!Object.keys(legacy).length) return;
+
+  const core = {};
+  const assets = {};
+  Object.entries(legacy).forEach(([key, value]) => {
+    if (ASSET_SETTING_KEYS.has(key)) {
+      assets[key] = value;
+    } else {
+      core[key] = value;
+    }
+  });
+
+  saveStoredObject(SETTINGS_CORE_STORAGE_KEY, {
+    ...loadStoredObject(SETTINGS_CORE_STORAGE_KEY),
+    ...core
+  });
+  saveStoredObject(SETTINGS_ASSETS_STORAGE_KEY, {
+    ...loadStoredObject(SETTINGS_ASSETS_STORAGE_KEY),
+    ...assets
+  });
+
+  try {
+    localStorage.removeItem(SETTINGS_STORAGE_KEY);
+  } catch (err) {
+    console.warn('Failed to remove legacy settings key:', err);
+  }
+}
+
+function loadPersistedSettings() {
+  migrateLegacyPersistedSettings();
+  const core = loadStoredObject(SETTINGS_CORE_STORAGE_KEY);
+  const assets = loadStoredObject(SETTINGS_ASSETS_STORAGE_KEY);
+  return { ...core, ...assets };
+}
+
+function savePersistedSettings(nextSettings) {
+  const coreUpdates = {};
+  const assetUpdates = {};
+
+  Object.entries(nextSettings || {}).forEach(([key, value]) => {
+    if (ASSET_SETTING_KEYS.has(key)) {
+      assetUpdates[key] = value;
+    } else {
+      coreUpdates[key] = value;
+    }
+  });
+
+  if (Object.keys(coreUpdates).length) {
+    const mergedCore = { ...loadStoredObject(SETTINGS_CORE_STORAGE_KEY), ...coreUpdates };
+    saveStoredObject(SETTINGS_CORE_STORAGE_KEY, mergedCore);
+  }
+
+  if (Object.keys(assetUpdates).length) {
+    const mergedAssets = { ...loadStoredObject(SETTINGS_ASSETS_STORAGE_KEY), ...assetUpdates };
+    const ok = saveStoredObject(SETTINGS_ASSETS_STORAGE_KEY, mergedAssets);
+    if (!ok) {
+      console.warn('Large media assets could not be saved, but core settings were preserved.');
+    }
+  }
+}
+
+function clearPersistedAssetSetting(key) {
+  if (!ASSET_SETTING_KEYS.has(key)) return;
+  const current = loadStoredObject(SETTINGS_ASSETS_STORAGE_KEY);
+  if (!(key in current)) return;
+  delete current[key];
+  try {
+    localStorage.setItem(SETTINGS_ASSETS_STORAGE_KEY, JSON.stringify(current));
+  } catch (err) {
+    console.warn(`Failed to clear persisted asset setting: ${key}`, err);
   }
 }
 
@@ -357,11 +442,11 @@ async function handleCustomSoundUpload(event, target) {
     if (target === 'sent') {
       AppState.customSentSoundUrl = null;
       AppState.customSentAudio = null;
-      savePersistedSettings({ customSentSoundDataUrl: null });
+      clearPersistedAssetSetting('customSentSoundDataUrl');
     } else {
       AppState.customReceivedSoundUrl = null;
       AppState.customReceivedAudio = null;
-      savePersistedSettings({ customReceivedSoundDataUrl: null });
+      clearPersistedAssetSetting('customReceivedSoundDataUrl');
     }
     return;
   }
@@ -501,7 +586,7 @@ async function handleAvatarPhotoChange(event) {
   if (!file) {
     AppState.avatarImageUrl = null;
     AppState.renderer.setAvatarImage(null);
-    savePersistedSettings({ avatarPhotoDataUrl: null });
+    clearPersistedAssetSetting('avatarPhotoDataUrl');
     return;
   }
 
@@ -557,7 +642,8 @@ async function handleWallpaperMediaChange(event) {
   video.load();
 
   if (!file) {
-    savePersistedSettings({ wallpaperMediaDataUrl: null, wallpaperMediaType: null });
+    clearPersistedAssetSetting('wallpaperMediaDataUrl');
+    clearPersistedAssetSetting('wallpaperMediaType');
     return;
   }
 
