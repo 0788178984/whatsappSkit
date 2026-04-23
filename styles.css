@@ -253,7 +253,7 @@ textarea {
 /* Front camera notch */
 .phone-notch {
   position: absolute;
-  top: 2px;
+  top: -1px;
   left: 50%;
   transform: translateX(-50%);
   width: 112px;
