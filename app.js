@@ -1288,3 +1288,91 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
+
+// Cloud Sync Functions
+async function handleCloudSignIn() {
+  const email = document.getElementById('cloudEmail')?.value;
+  const password = document.getElementById('cloudPassword')?.value;
+  
+  if (!email || !password) {
+    alert('Please enter email and password');
+    return;
+  }
+  
+  try {
+    await FirebaseStorage.signIn(email, password);
+    FirebaseStorage.hideLoginModal();
+    alert('Logged in successfully!');
+  } catch (err) {
+    alert('Login failed: ' + err.message);
+  }
+}
+
+async function handleCloudSignUp() {
+  const email = document.getElementById('cloudEmail')?.value;
+  const password = document.getElementById('cloudPassword')?.value;
+  
+  if (!email || !password) {
+    alert('Please enter email and password');
+    return;
+  }
+  
+  if (password.length < 6) {
+    alert('Password must be at least 6 characters');
+    return;
+  }
+  
+  try {
+    await FirebaseStorage.signUp(email, password);
+    FirebaseStorage.hideLoginModal();
+    alert('Account created! You are now logged in.');
+  } catch (err) {
+    alert('Sign up failed: ' + err.message);
+  }
+}
+
+async function saveSettingsToCloud() {
+  try {
+    const settings = loadPersistedSettings();
+    await FirebaseStorage.saveSettings(settings);
+    alert('Settings saved to cloud!');
+  } catch (err) {
+    alert('Failed to save: ' + err.message);
+  }
+}
+
+async function loadSettingsFromCloud() {
+  try {
+    const settings = await FirebaseStorage.loadSettings();
+    if (!settings) {
+      alert('No saved settings found in cloud');
+      return;
+    }
+    
+    // Apply loaded settings
+    applyPersistedControlValues(settings);
+    restorePersistedAssets(settings);
+    
+    // Update UI
+    updateContactSettings();
+    updateWallpaperSettings();
+    updateSoundSettings();
+    
+    // Update renderer
+    if (settings.chatDate) {
+      AppState.renderer.setDate(settings.chatDate);
+    }
+    if (settings.typingSpeed) {
+      AppState.renderer.options.typingSpeed = settings.typingSpeed;
+    }
+    
+    // Re-parse script if exists
+    if (settings.skitScript) {
+      parseAndPreview();
+    }
+    
+    alert('Settings loaded from cloud!');
+  } catch (err) {
+    alert('Failed to load: ' + err.message);
+  }
+}

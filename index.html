@@ -214,6 +214,22 @@ THEM: Ohhh Lucky 😄
           🎬 Preview & Export Video
         </button>
       </div>
+
+      <!-- Cloud Sync -->
+      <div class="section">
+        <h3>☁️ Cloud Sync</h3>
+        <div class="form-group">
+          <div id="cloudStatus" class="cloud-status">☁️ Not logged in</div>
+        </div>
+        <div class="form-row">
+          <button class="btn btn-secondary" id="cloudLoginBtn" onclick="FirebaseStorage.showLoginModal()">Login / Sign Up</button>
+          <button class="btn btn-secondary" id="cloudLogoutBtn" onclick="FirebaseStorage.signOut()" style="display: none;">Logout</button>
+        </div>
+        <div class="form-row" style="margin-top: 8px;">
+          <button class="btn btn-secondary" id="saveToCloudBtn" onclick="saveSettingsToCloud()" disabled>💾 Save to Cloud</button>
+          <button class="btn btn-secondary" id="loadFromCloudBtn" onclick="loadSettingsFromCloud()" disabled>📥 Load from Cloud</button>
+        </div>
+      </div>
     </div>
 
     <!-- Preview Panel -->
@@ -378,15 +394,44 @@ THEM: Ohhh Lucky 😄
     </div>
   </div>
 
+  <!-- Cloud Auth Modal -->
+  <div id="cloudAuthModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>☁️ Cloud Login</h3>
+        <button class="close-btn" onclick="FirebaseStorage.hideLoginModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="cloudEmail" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="cloudPassword" placeholder="Min 6 characters">
+        </div>
+        <div class="form-row">
+          <button class="btn btn-primary" onclick="handleCloudSignIn()">Login</button>
+          <button class="btn btn-secondary" onclick="handleCloudSignUp()">Sign Up</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Hidden canvas for video capture -->
   <canvas id="captureCanvas" style="display: none;"></canvas>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="vendor/ffmpeg/ffmpeg.js"></script>
   <script src="vendor/ffmpeg/util.js"></script>
   <script src="skit-parser.js"></script>
   <script src="whatsapp-renderer.js"></script>
   <script src="video-exporter.js"></script>
+  <script src="firebase-storage.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
