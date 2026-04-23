@@ -143,17 +143,23 @@
       <div class="section">
         <h3>🤖 AI Mode</h3>
         <div class="form-group">
-          <label>AI Prompt / Raw Text</label>
-          <textarea id="aiPromptInput" placeholder="Describe the conversation you want to generate, or paste raw text to organize...
+          <label>
+            <input type="radio" name="aiMode" value="generate" checked onchange="updateAIModeUI()"> Generate Script
+          </label>
+          <label style="margin-left: 20px;">
+            <input type="radio" name="aiMode" value="organize" onchange="updateAIModeUI()"> Organize Text
+          </label>
+        </div>
+        <div class="form-group">
+          <label id="aiPromptLabel">AI Prompt</label>
+          <textarea id="aiPromptInput" placeholder="Describe the conversation you want to generate...
 
-Examples:
+Example:
 • 'Create a funny conversation about someone forgetting their anniversary'
-• 'Write a flirty chat between two coworkers'
-• 'Organize this messy conversation: [paste your text here]'" rows="4"></textarea>
+• 'Write a flirty chat between two coworkers'" rows="4"></textarea>
         </div>
         <div class="form-row">
-          <button class="btn btn-primary" id="generateScriptBtn" onclick="generateAIScript()">🚀 Generate Script</button>
-          <button class="btn btn-secondary" id="organizeScriptBtn" onclick="organizeAIScript()">✨ Organize Text</button>
+          <button class="btn btn-primary" id="aiActionButton" onclick="handleAIAction()">🚀 Generate Script</button>
         </div>
         <div id="aiStatus" class="ai-status" style="display: none;"></div>
       </div>

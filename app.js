@@ -1410,6 +1410,33 @@ async function organizeAIScript() {
   }
 }
 
+function updateAIModeUI() {
+  const mode = document.querySelector('input[name="aiMode"]:checked').value;
+  const label = document.getElementById('aiPromptLabel');
+  const textarea = document.getElementById('aiPromptInput');
+  const button = document.getElementById('aiActionButton');
+  
+  if (mode === 'generate') {
+    label.textContent = 'AI Prompt';
+    textarea.placeholder = "Describe the conversation you want to generate...\n\nExample:\n• 'Create a funny conversation about someone forgetting their anniversary'\n• 'Write a flirty chat between two coworkers'";
+    button.textContent = '🚀 Generate Script';
+  } else {
+    label.textContent = 'Raw Text to Organize';
+    textarea.placeholder = "Paste your raw conversation text here to organize it into proper WhatsApp format...";
+    button.textContent = '✨ Organize Text';
+  }
+}
+
+async function handleAIAction() {
+  const mode = document.querySelector('input[name="aiMode"]:checked').value;
+  
+  if (mode === 'generate') {
+    await generateAIScript();
+  } else {
+    await organizeAIScript();
+  }
+}
+
 async function loadSettingsFromCloud() {
   try {
     const settings = await FirebaseStorage.loadSettings();
