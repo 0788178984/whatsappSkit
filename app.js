@@ -1349,6 +1349,67 @@ async function saveSettingsToCloud() {
   }
 }
 
+// AI Mode Functions
+async function generateAIScript() {
+  const prompt = document.getElementById('aiPromptInput').value;
+  const statusEl = document.getElementById('aiStatus');
+  
+  if (!prompt) {
+    alert('Please enter a prompt to generate a script');
+    return;
+  }
+  
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Generating script...';
+  statusEl.className = 'ai-status loading';
+  
+  try {
+    const client = window.AIClient;
+    const script = await client.generateScript(prompt);
+    
+    // Populate the script textarea
+    document.getElementById('skitScript').value = script;
+    parseAndPreview();
+    
+    statusEl.textContent = 'Script generated successfully!';
+    statusEl.className = 'ai-status success';
+    setTimeout(() => statusEl.style.display = 'none', 3000);
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.className = 'ai-status error';
+  }
+}
+
+async function organizeAIScript() {
+  const rawText = document.getElementById('aiPromptInput').value;
+  const statusEl = document.getElementById('aiStatus');
+  
+  if (!rawText) {
+    alert('Please enter raw text to organize');
+    return;
+  }
+  
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Organizing script...';
+  statusEl.className = 'ai-status loading';
+  
+  try {
+    const client = window.AIClient;
+    const organizedScript = await client.organizeScript(rawText);
+    
+    // Populate the script textarea
+    document.getElementById('skitScript').value = organizedScript;
+    parseAndPreview();
+    
+    statusEl.textContent = 'Script organized successfully!';
+    statusEl.className = 'ai-status success';
+    setTimeout(() => statusEl.style.display = 'none', 3000);
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.className = 'ai-status error';
+  }
+}
+
 async function loadSettingsFromCloud() {
   try {
     const settings = await FirebaseStorage.loadSettings();

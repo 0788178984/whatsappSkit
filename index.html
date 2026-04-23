@@ -139,6 +139,25 @@
         </div>
       </div>
 
+      <!-- AI Mode -->
+      <div class="section">
+        <h3>🤖 AI Mode</h3>
+        <div class="form-group">
+          <label>AI Prompt / Raw Text</label>
+          <textarea id="aiPromptInput" placeholder="Describe the conversation you want to generate, or paste raw text to organize...
+
+Examples:
+• 'Create a funny conversation about someone forgetting their anniversary'
+• 'Write a flirty chat between two coworkers'
+• 'Organize this messy conversation: [paste your text here]'" rows="4"></textarea>
+        </div>
+        <div class="form-row">
+          <button class="btn btn-primary" id="generateScriptBtn" onclick="generateAIScript()">🚀 Generate Script</button>
+          <button class="btn btn-secondary" id="organizeScriptBtn" onclick="organizeAIScript()">✨ Organize Text</button>
+        </div>
+        <div id="aiStatus" class="ai-status" style="display: none;"></div>
+      </div>
+
       <!-- Skit Script -->
       <div class="section">
         <h3>Skit Script</h3>
@@ -432,6 +451,7 @@ THEM: Ohhh Lucky 😄
   <script src="whatsapp-renderer.js"></script>
   <script src="video-exporter.js"></script>
   <script src="firebase-storage.js"></script>
+  <script src="ai-client.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
