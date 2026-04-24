@@ -235,6 +235,17 @@ function initApp() {
   const persisted = loadPersistedSettings();
   applyPersistedControlValues(persisted);
 
+  // Register service worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch(error => {
+        console.log('Service Worker registration failed:', error);
+      });
+  }
+
   // Initialize components
   AppState.parser = new SkitParser();
   AppState.renderer = new WhatsAppRenderer({
