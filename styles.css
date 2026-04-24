@@ -1512,17 +1512,33 @@ textarea {
     }
     
     .preview-panel {
-      height: auto;
-      min-height: 60vh;
-      max-height: 70vh;
-      transition: height 0.2s ease;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50vh;
+      z-index: 1000;
+      padding: 10px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1f 100%);
+      transition: all 0.2s ease;
+    }
+    
+    .phone {
+      max-height: 100%;
+      overflow: auto;
     }
     
     .editor-panel {
-      height: auto;
-      max-height: 40vh;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50vh;
       overflow-y: auto;
-      transition: height 0.2s ease;
+      z-index: 1001;
+      background: #1a1a2e;
+      transition: all 0.2s ease;
+      border-top: 2px solid #128C7E;
     }
   }
 }
