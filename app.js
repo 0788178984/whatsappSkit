@@ -235,17 +235,6 @@ function initApp() {
   const persisted = loadPersistedSettings();
   applyPersistedControlValues(persisted);
 
-  // Register service worker for PWA
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
-        console.log('Service Worker registered with scope:', registration.scope);
-      })
-      .catch(error => {
-        console.log('Service Worker registration failed:', error);
-      });
-  }
-
   // Initialize components
   AppState.parser = new SkitParser();
   AppState.renderer = new WhatsAppRenderer({
@@ -1528,75 +1517,6 @@ function toggleVoiceInput() {
     startVoiceInput();
   }
 }
-
-// PWA Install Functions
-let deferredPrompt = null;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  
-  // Update status to show install is available
-  const installStatus = document.getElementById('installStatus');
-  if (installStatus) {
-    installStatus.textContent = 'Click to install as an app on your device';
-    installStatus.style.color = '#2e7d32';
-  }
-});
-
-function installPWA() {
-  if (!deferredPrompt) {
-    // If no deferred prompt, provide instructions for manual installation
-    const installStatus = document.getElementById('installStatus');
-    if (installStatus) {
-      installStatus.innerHTML = 'Installation not yet available. Visit the site a few more times, or use Chrome menu → "Add to Home screen"';
-      installStatus.style.color = '#f57c00';
-    }
-    
-    // Also try to show the browser's install prompt if available
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      installStatus.textContent = 'App is already installed!';
-      installStatus.style.color = '#2e7d32';
-    }
-    return;
-  }
-  
-  deferredPrompt.prompt();
-  
-  deferredPrompt.userChoice.then((choiceResult) => {
-    if (choiceResult.outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-      const installBtn = document.getElementById('installAppBtn');
-      const installStatus = document.getElementById('installStatus');
-      
-      if (installBtn) {
-        installBtn.textContent = 'Installed ✓';
-        installBtn.disabled = true;
-      }
-      if (installStatus) {
-        installStatus.textContent = 'App installed successfully!';
-        installStatus.style.color = '#2e7d32';
-      }
-    } else {
-      console.log('User dismissed the install prompt');
-    }
-    deferredPrompt = null;
-  });
-}
-
-window.addEventListener('appinstalled', () => {
-  const installBtn = document.getElementById('installAppBtn');
-  const installStatus = document.getElementById('installStatus');
-  
-  if (installBtn) {
-    installBtn.style.display = 'none';
-  }
-  if (installStatus) {
-    installStatus.textContent = 'App installed successfully!';
-    installStatus.style.color = '#2e7d32';
-  }
-  deferredPrompt = null;
-});
 
 function startVoiceInput() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
