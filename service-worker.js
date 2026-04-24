@@ -11,7 +11,8 @@ const urlsToCache = [
   '/firebase-storage.js',
   '/vendor/ffmpeg/ffmpeg.js',
   '/vendor/ffmpeg/util.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/Assets/13234598_5156687.jpg'
 ];
 
 self.addEventListener('install', event => {
