@@ -1461,19 +1461,28 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   
-  // Show the install button
-  const installBtn = document.getElementById('installAppBtn');
+  // Update status to show install is available
   const installStatus = document.getElementById('installStatus');
-  
-  if (installBtn) {
-    installBtn.style.display = 'inline-block';
-    installStatus.style.display = 'none';
+  if (installStatus) {
+    installStatus.textContent = 'Click to install as an app on your device';
+    installStatus.style.color = '#2e7d32';
   }
 });
 
 function installPWA() {
   if (!deferredPrompt) {
-    alert('App is already installed or installation is not available.');
+    // If no deferred prompt, provide instructions for manual installation
+    const installStatus = document.getElementById('installStatus');
+    if (installStatus) {
+      installStatus.innerHTML = 'Installation not yet available. Visit the site a few more times, or use Chrome menu → "Add to Home screen"';
+      installStatus.style.color = '#f57c00';
+    }
+    
+    // Also try to show the browser's install prompt if available
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      installStatus.textContent = 'App is already installed!';
+      installStatus.style.color = '#2e7d32';
+    }
     return;
   }
   
@@ -1486,7 +1495,8 @@ function installPWA() {
       const installStatus = document.getElementById('installStatus');
       
       if (installBtn) {
-        installBtn.style.display = 'none';
+        installBtn.textContent = 'Installed ✓';
+        installBtn.disabled = true;
       }
       if (installStatus) {
         installStatus.textContent = 'App installed successfully!';
