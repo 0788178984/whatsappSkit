@@ -267,6 +267,9 @@ function initApp() {
   setupSoundSettings();
   restorePersistedAssets(persisted);
   updateContactSettings();
+  
+  // Setup mobile keyboard detection
+  setupMobileKeyboardDetection();
 
   // Load example only when no previous script is saved
   const scriptEl = document.getElementById('skitScript');
@@ -1390,6 +1393,47 @@ function loadAIApiKey() {
   } catch (err) {
     console.warn('Failed to load AI API key:', err);
   }
+}
+
+// Mobile Keyboard Detection
+function setupMobileKeyboardDetection() {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (!isMobile) return;
+
+  let initialViewportHeight = window.innerHeight;
+
+  // Detect keyboard appearance
+  window.addEventListener('resize', () => {
+    const currentViewportHeight = window.innerHeight;
+    const heightDifference = initialViewportHeight - currentViewportHeight;
+
+    // If viewport shrinks significantly, keyboard is open
+    if (heightDifference > 150) {
+      document.body.classList.add('keyboard-open');
+    } else {
+      document.body.classList.remove('keyboard-open');
+    }
+  });
+
+  // Also detect when inputs are focused
+  const inputs = document.querySelectorAll('input, textarea');
+  inputs.forEach(input => {
+    input.addEventListener('focus', () => {
+      setTimeout(() => {
+        const currentViewportHeight = window.innerHeight;
+        const heightDifference = initialViewportHeight - currentViewportHeight;
+        if (heightDifference > 150) {
+          document.body.classList.add('keyboard-open');
+        }
+      }, 300);
+    });
+
+    input.addEventListener('blur', () => {
+      setTimeout(() => {
+        document.body.classList.remove('keyboard-open');
+      }, 100);
+    });
+  });
 }
 
 function handleAIApiKeyChange(e) {

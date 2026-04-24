@@ -1502,3 +1502,27 @@ textarea {
   background: #ffebee;
   color: #c62828;
 }
+
+/* Mobile Keyboard Handling */
+@media (max-width: 768px) {
+  body.keyboard-open {
+    .app-container {
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    .preview-panel {
+      height: auto;
+      min-height: 60vh;
+      max-height: 70vh;
+      transition: height 0.2s ease;
+    }
+    
+    .editor-panel {
+      height: auto;
+      max-height: 40vh;
+      overflow-y: auto;
+      transition: height 0.2s ease;
+    }
+  }
+}
