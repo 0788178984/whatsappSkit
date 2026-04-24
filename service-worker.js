@@ -12,7 +12,7 @@ const urlsToCache = [
   '/vendor/ffmpeg/ffmpeg.js',
   '/vendor/ffmpeg/util.js',
   '/manifest.json',
-  '/Assets/13234598_5156687.jpg'
+  '/logo.jpg'
 ];
 
 self.addEventListener('install', event => {
