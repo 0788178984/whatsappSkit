@@ -1361,6 +1361,14 @@ function loadAIApiKey() {
   if (!apiKeyInput) return;
   
   try {
+    // Check if build-injected API key exists (from Netlify)
+    if (window.AIClient && window.AIClient.hasBuildApiKey && window.AIClient.hasBuildApiKey()) {
+      // Hide the API key input field since it's already configured
+      apiKeyInput.parentElement.style.display = 'none';
+      return;
+    }
+    
+    // Otherwise, load from localStorage for manual entry
     const savedKey = localStorage.getItem('whatsappSkitMaker.aiApiKey') || '';
     apiKeyInput.value = savedKey;
     

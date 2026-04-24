@@ -17,7 +17,8 @@ const FREE_MODELS = [
 
 class AIClient {
   constructor() {
-    this.apiKey = this.loadApiKey() || '';
+    // Priority: 1. Build-injected API key (from Netlify), 2. localStorage, 3. empty
+    this.apiKey = process.env.OPENROUTER_API_KEY || this.loadApiKey() || '';
     this.currentModel = FREE_MODELS[0]; // Start with smart router
     this.rateLimitDelay = 1000; // 1 second between requests
     this.lastRequestTime = 0;
@@ -38,6 +39,11 @@ class AIClient {
     } catch (err) {
       console.warn('Failed to save API key:', err);
     }
+  }
+
+  hasBuildApiKey() {
+    // Check if the API key comes from build injection (not empty and not from localStorage)
+    return !!(process.env.OPENROUTER_API_KEY);
   }
 
   async makeRequest(endpoint, data) {
