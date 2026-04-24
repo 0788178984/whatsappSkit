@@ -81,13 +81,22 @@ class AIClient {
   async generateScript(prompt, context = '') {
     const systemPrompt = `You are a WhatsApp chat script writer. Create natural, flowing conversations in WhatsApp format.
 
-Format rules:
+CRITICAL FORMAT RULES (follow exactly):
 - Use "ME:" for sent messages, "THEM:" for received messages
-- Add timestamps occasionally (like "8:45 PM") for realism
+- Add timestamps occasionally (like "8:45 PM") BEFORE the sender, like "8:45 PM ME:" or "8:45 PM THEM:"
 - Include emojis naturally in messages
-- Add reactions with "--reaction: emoji" after relevant messages
+- Add reactions with "--reaction: emoji" on a separate line after the message
+- DO NOT use markdown formatting (no **, *, or other markdown symbols)
+- DO NOT use bold or italics
 - Keep conversations realistic and engaging
 - Focus on dialogue that tells a story
+
+EXAMPLE FORMAT:
+ME: Hey, how are you?
+THEM: I'm good, thanks!
+8:45 PM ME: What are you doing?
+THEM: Just working
+--reaction: 😊
 
 ${context ? `Additional context: ${context}` : ''}
 

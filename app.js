@@ -1417,11 +1417,6 @@ async function generateAIScript() {
     document.getElementById('skitScript').value = script;
     parseAndPreview();
     
-    // Auto-play the generated script
-    if (!AppState.isPlaying) {
-      togglePlay();
-    }
-    
     statusEl.textContent = 'Script generated successfully!';
     statusEl.className = 'ai-status success';
     setTimeout(() => statusEl.style.display = 'none', 3000);
