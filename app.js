@@ -248,6 +248,9 @@ function initApp() {
   });
   AppState.exporter = videoExporter;
   
+  // Load saved API key
+  loadAIApiKey();
+  
   // Set up event listeners
   setupEventListeners();
   setupSoundSettings();
@@ -345,6 +348,9 @@ function setupEventListeners() {
   });
   document.getElementById('customSentSound')?.addEventListener('change', (e) => handleCustomSoundUpload(e, 'sent'));
   document.getElementById('customReceivedSound')?.addEventListener('change', (e) => handleCustomSoundUpload(e, 'received'));
+  
+  // AI Mode
+  document.getElementById('aiApiKey')?.addEventListener('input', handleAIApiKeyChange);
   
   // Script changes
   document.getElementById('skitScript')?.addEventListener('input', debounce(parseAndPreview, 500));
@@ -1350,6 +1356,38 @@ async function saveSettingsToCloud() {
 }
 
 // AI Mode Functions
+function loadAIApiKey() {
+  const apiKeyInput = document.getElementById('aiApiKey');
+  if (!apiKeyInput) return;
+  
+  try {
+    const savedKey = localStorage.getItem('whatsappSkitMaker.aiApiKey') || '';
+    apiKeyInput.value = savedKey;
+    
+    // Update the AIClient with the saved key
+    if (window.AIClient && savedKey) {
+      window.AIClient.setApiKey(savedKey);
+    }
+  } catch (err) {
+    console.warn('Failed to load AI API key:', err);
+  }
+}
+
+function handleAIApiKeyChange(e) {
+  const apiKey = e.target.value;
+  
+  try {
+    localStorage.setItem('whatsappSkitMaker.aiApiKey', apiKey);
+    
+    // Update the AIClient with the new key
+    if (window.AIClient) {
+      window.AIClient.setApiKey(apiKey);
+    }
+  } catch (err) {
+    console.warn('Failed to save AI API key:', err);
+  }
+}
+
 async function generateAIScript() {
   const prompt = document.getElementById('aiPromptInput').value;
   const statusEl = document.getElementById('aiStatus');

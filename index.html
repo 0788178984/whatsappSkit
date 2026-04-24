@@ -143,6 +143,11 @@
       <div class="section">
         <h3>🤖 AI Mode</h3>
         <div class="form-group">
+          <label>OpenRouter API Key</label>
+          <input type="password" id="aiApiKey" placeholder="Enter your OpenRouter API key (get free at openrouter.ai)">
+          <small style="color: #666; font-size: 12px;">Required for AI features. Get a free key at openrouter.ai</small>
+        </div>
+        <div class="form-group">
           <label>
             <input type="radio" name="aiMode" value="generate" checked onchange="updateAIModeUI()"> Generate Script
           </label>

@@ -17,10 +17,27 @@ const FREE_MODELS = [
 
 class AIClient {
   constructor() {
-    this.apiKey = '' || '';
+    this.apiKey = this.loadApiKey() || '';
     this.currentModel = FREE_MODELS[0]; // Start with smart router
     this.rateLimitDelay = 1000; // 1 second between requests
     this.lastRequestTime = 0;
+  }
+
+  loadApiKey() {
+    try {
+      return localStorage.getItem('whatsappSkitMaker.aiApiKey') || '';
+    } catch (err) {
+      return '';
+    }
+  }
+
+  setApiKey(key) {
+    this.apiKey = key;
+    try {
+      localStorage.setItem('whatsappSkitMaker.aiApiKey', key);
+    } catch (err) {
+      console.warn('Failed to save API key:', err);
+    }
   }
 
   async makeRequest(endpoint, data) {
