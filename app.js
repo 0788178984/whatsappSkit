@@ -1454,6 +1454,65 @@ function toggleVoiceInput() {
   }
 }
 
+// PWA Install Functions
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Show the install button
+  const installBtn = document.getElementById('installAppBtn');
+  const installStatus = document.getElementById('installStatus');
+  
+  if (installBtn) {
+    installBtn.style.display = 'inline-block';
+    installStatus.style.display = 'none';
+  }
+});
+
+function installPWA() {
+  if (!deferredPrompt) {
+    alert('App is already installed or installation is not available.');
+    return;
+  }
+  
+  deferredPrompt.prompt();
+  
+  deferredPrompt.userChoice.then((choiceResult) => {
+    if (choiceResult.outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+      const installBtn = document.getElementById('installAppBtn');
+      const installStatus = document.getElementById('installStatus');
+      
+      if (installBtn) {
+        installBtn.style.display = 'none';
+      }
+      if (installStatus) {
+        installStatus.textContent = 'App installed successfully!';
+        installStatus.style.color = '#2e7d32';
+      }
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+    deferredPrompt = null;
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  const installBtn = document.getElementById('installAppBtn');
+  const installStatus = document.getElementById('installStatus');
+  
+  if (installBtn) {
+    installBtn.style.display = 'none';
+  }
+  if (installStatus) {
+    installStatus.textContent = 'App installed successfully!';
+    installStatus.style.color = '#2e7d32';
+  }
+  deferredPrompt = null;
+});
+
 function startVoiceInput() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   
