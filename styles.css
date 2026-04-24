@@ -278,6 +278,18 @@ textarea {
   transform: translateY(-1px);
 }
 
+.btn-success {
+  background: #25D366;
+  color: #000;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-success:hover {
+  background: #1ebd58;
+  transform: translateY(-1px);
+}
+
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;

@@ -270,6 +270,9 @@ function initApp() {
   
   // Setup mobile keyboard detection
   setupMobileKeyboardDetection();
+  
+  // Setup join WhatsApp section
+  setupJoinWhatsAppSection();
 
   // Load example only when no previous script is saved
   const scriptEl = document.getElementById('skitScript');
@@ -1434,6 +1437,34 @@ function setupMobileKeyboardDetection() {
       }, 100);
     });
   });
+}
+
+// Join WhatsApp Section
+function setupJoinWhatsAppSection() {
+  const joinSection = document.getElementById('joinWhatsAppSection');
+  const joinMessage = document.getElementById('joinMessage');
+  
+  if (!joinSection) return;
+
+  // Check if user has already seen/dismissed the message
+  const hasSeenMessage = localStorage.getItem('whatsappSkitMaker.joinWhatsAppSeen');
+  
+  if (hasSeenMessage === 'true') {
+    // User has already seen it, hide the section
+    joinSection.style.display = 'none';
+  } else {
+    // First-time user, show friendly message
+    joinMessage.textContent = "👋 Welcome! Join our WhatsApp community to get updates, tips, and connect with other users!";
+  }
+}
+
+function dismissJoinWhatsApp() {
+  const joinSection = document.getElementById('joinWhatsAppSection');
+  
+  if (joinSection) {
+    joinSection.style.display = 'none';
+    localStorage.setItem('whatsappSkitMaker.joinWhatsAppSeen', 'true');
+  }
 }
 
 function handleAIApiKeyChange(e) {
