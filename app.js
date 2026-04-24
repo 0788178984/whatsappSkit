@@ -1426,6 +1426,104 @@ async function generateAIScript() {
   }
 }
 
+// Voice Input Functions
+let recognition = null;
+let isRecording = false;
+
+function toggleVoiceInput() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('Voice input is not supported in your browser. Please use Chrome or Edge.');
+    return;
+  }
+
+  if (isRecording) {
+    stopVoiceInput();
+  } else {
+    startVoiceInput();
+  }
+}
+
+function startVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  const voiceBtn = document.getElementById('voiceInputBtn');
+  const voiceStatus = document.getElementById('voiceStatus');
+  const promptInput = document.getElementById('aiPromptInput');
+
+  recognition.onstart = () => {
+    isRecording = true;
+    voiceBtn.classList.add('recording');
+    voiceStatus.style.display = 'block';
+    voiceStatus.textContent = '🎤 Listening...';
+    voiceStatus.className = 'voice-status listening';
+  };
+
+  recognition.onresult = (event) => {
+    let interimTranscript = '';
+    let finalTranscript = '';
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interimTranscript += transcript;
+      }
+    }
+
+    if (finalTranscript) {
+      // Append final transcript to the textarea
+      const currentText = promptInput.value;
+      promptInput.value = currentText + (currentText ? ' ' : '') + finalTranscript;
+    }
+
+    if (interimTranscript) {
+      voiceStatus.textContent = '🎤 Listening... ' + interimTranscript;
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error:', event.error);
+    voiceStatus.textContent = '❌ Error: ' + event.error;
+    voiceStatus.className = 'voice-status error';
+    stopVoiceInput();
+  };
+
+  recognition.onend = () => {
+    if (isRecording) {
+      // If it ended but we're still supposed to be recording, restart it
+      recognition.start();
+    }
+  };
+
+  recognition.start();
+}
+
+function stopVoiceInput() {
+  isRecording = false;
+  
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+  }
+
+  const voiceBtn = document.getElementById('voiceInputBtn');
+  const voiceStatus = document.getElementById('voiceStatus');
+
+  voiceBtn.classList.remove('recording');
+  voiceStatus.textContent = '✓ Voice input stopped';
+  voiceStatus.className = 'voice-status';
+  
+  setTimeout(() => {
+    voiceStatus.style.display = 'none';
+  }, 2000);
+}
+
 async function organizeAIScript() {
   const rawText = document.getElementById('aiPromptInput').value;
   const statusEl = document.getElementById('aiStatus');
