@@ -17,8 +17,18 @@ const FREE_MODELS = [
 
 class AIClient {
   constructor() {
-    // Priority: 1. Build-injected API key (from Netlify), 2. localStorage, 3. empty
-    this.apiKey = process.env.OPENROUTER_API_KEY || this.loadApiKey() || '';
+    // Priority: 1. Build-injected API keys (from Netlify), 2. localStorage, 3. empty
+    this.apiKeys = process.env.OPENROUTER_API_KEYS || [];
+    if (!Array.isArray(this.apiKeys) || this.apiKeys.length === 0) {
+      const localKey = this.loadApiKey();
+      if (localKey) {
+        this.apiKeys = [localKey];
+      } else {
+        this.apiKeys = [];
+      }
+    }
+    this.currentKeyIndex = 0;
+    this.apiKey = this.apiKeys[0] || '';
     this.currentModel = FREE_MODELS[0]; // Start with smart router
     this.rateLimitDelay = 1000; // 1 second between requests
     this.lastRequestTime = 0;
@@ -33,6 +43,8 @@ class AIClient {
   }
 
   setApiKey(key) {
+    this.apiKeys = [key];
+    this.currentKeyIndex = 0;
     this.apiKey = key;
     try {
       localStorage.setItem('whatsappSkitMaker.aiApiKey', key);
@@ -43,10 +55,20 @@ class AIClient {
 
   hasBuildApiKey() {
     // Check if the API key comes from build injection (not empty and not from localStorage)
-    return !!(process.env.OPENROUTER_API_KEY);
+    return !!(process.env.OPENROUTER_API_KEYS && process.env.OPENROUTER_API_KEYS.length > 0);
   }
 
-  async makeRequest(endpoint, data) {
+  rotateKey() {
+    if (this.apiKeys.length > 1) {
+      this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+      this.apiKey = this.apiKeys[this.currentKeyIndex];
+      console.log(`Rotated to API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}`);
+      return true;
+    }
+    return false;
+  }
+
+  async makeRequest(endpoint, data, retryCount = 0) {
     // Rate limiting
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
@@ -57,6 +79,7 @@ class AIClient {
 
     console.log('AI Client - API Key status:', this.apiKey ? 'Key present' : 'No key');
     console.log('AI Client - API Key length:', this.apiKey?.length || 0);
+    console.log('AI Client - Using key index:', this.currentKeyIndex);
 
     const response = await fetch(`${OPENROUTER_BASE_URL}${endpoint}`, {
       method: 'POST',
@@ -72,6 +95,15 @@ class AIClient {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
       console.error('AI Client - API Error:', error);
+
+      // Try rotating to next API key if available and we haven't retried too many times
+      if (this.apiKeys.length > 1 && retryCount < this.apiKeys.length) {
+        console.log('AI Client - Rotating API key due to error');
+        if (this.rotateKey()) {
+          return this.makeRequest(endpoint, data, retryCount + 1);
+        }
+      }
+
       throw new Error(error.error?.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
