@@ -55,6 +55,9 @@ class AIClient {
     }
     this.lastRequestTime = Date.now();
 
+    console.log('AI Client - API Key status:', this.apiKey ? 'Key present' : 'No key');
+    console.log('AI Client - API Key length:', this.apiKey?.length || 0);
+
     const response = await fetch(`${OPENROUTER_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -68,6 +71,7 @@ class AIClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
+      console.error('AI Client - API Error:', error);
       throw new Error(error.error?.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
